@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>My Team</title>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+<style>
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Segoe UI,sans-serif;
+}
+
+body{
+background:#0b0f19;
+color:#fff;
+padding-bottom:90px;
+}
+
+header{
+background:#111827;
+padding:18px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+border-bottom:1px solid #222;
+position:sticky;
+top:0;
+}
+
+header h2{
+color:#f59e0b;
+}
+
+.container{
+padding:15px;
+}
+
+.card{
+background:#161d2d;
+border-radius:16px;
+padding:18px;
+margin-bottom:18px;
+}
+
+.title{
+font-size:18px;
+font-weight:bold;
+margin-bottom:15px;
+color:#f59e0b;
+}
+
+.stats{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:12px;
+}
+
+.stat{
+background:#20293d;
+padding:15px;
+border-radius:12px;
+text-align:center;
+}
+
+.stat p{
+color:#aaa;
+font-size:14px;
+}
+
+.stat h2{
+margin-top:8px;
+color:#f59e0b;
+}
+
+.referral-box{
+display:flex;
+margin-top:15px;
+gap:10px;
+}
+
+.referral-box input{
+flex:1;
+background:#20293d;
+border:none;
+padding:12px;
+border-radius:10px;
+color:white;
+}
+
+.referral-box button{
+background:#f59e0b;
+border:none;
+padding:12px 20px;
+border-radius:10px;
+font-weight:bold;
+cursor:pointer;
+}
+
+.member{
+background:#20293d;
+padding:15px;
+border-radius:12px;
+margin-bottom:10px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+}
+
+.member-name{
+font-weight:bold;
+}
+
+.level{
+background:#00b894;
+padding:4px 10px;
+border-radius:20px;
+font-size:12px;
+}
+
+.commission{
+color:#f59e0b;
+font-weight:bold;
+margin-top:5px;
+}
+
+.bottom-nav{
+position:fixed;
+bottom:0;
+left:0;
+width:100%;
+background:#111827;
+display:flex;
+justify-content:space-around;
+padding:12px 0;
+}
+
+.bottom-nav a{
+color:#999;
+text-decoration:none;
+display:flex;
+flex-direction:column;
+align-items:center;
+font-size:13px;
+}
+
+.bottom-nav a.active{
+color:#f59e0b;
+}
+</style>
+
+</head>
+
+<body>
+
+<header>
+
+<h2>My Team</h2>
+
+<i class="fa-solid fa-users"></i>
+
+</header>
+
+<div class="container">
+
+<div class="card">
+
+<div class="title">
+Referral Link
+</div>
+
+<div class="referral-box">
+
+<input id="refLink" readonly>
+
+<button onclick="copyReferral()">
+Copy
+</button>
+
+</div>
+
+</div>
+
+<div class="card">
+
+<div class="title">
+Team Statistics
+</div>
+
+<div class="stats">
+
+<div class="stat">
+<p>Total Members</p>
+<h2 id="members">0</h2>
+</div>
+
+<div class="stat">
+<p>Active Members</p>
+<h2 id="activeMembers">0</h2>
+</div>
+
+<div class="stat">
+<p>Today's Commission</p>
+<h2 id="todayCommission">UGX 0</h2>
+</div>
+
+<div class="stat">
+<p>Total Commission</p>
+<h2 id="totalCommission">UGX 0</h2>
+</div>
+
+</div>
+
+</div>
+
+<div class="card">
+
+<div class="title">
+Team Members
+</div>
+
+<div id="memberList">
+
+</div>
+
+</div>
+
+</div>
+
+<nav class="bottom-nav">
+
+<a href="index.html">
+<i class="fa-solid fa-house"></i>
+Home
+</a>
+
+<a href="order.html">
+<i class="fa-solid fa-chart-line"></i>
+Orders
+</a>
+
+<a href="team.html" class="active">
+<i class="fa-solid fa-users"></i>
+Team
+</a>
+
+<a href="me.html">
+<i class="fa-solid fa-user"></i>
+Me
+</a>
+
+</nav>
+
+<script>
+
+async function loadTeam(){
+
+try{
+
+const response=await fetch("/api/team");
+
+const data=await response.json();
+
+document.getElementById("members").innerText=data.totalMembers;
+
+document.getElementById("activeMembers").innerText=data.activeMembers;
+
+document.getElementById("todayCommission").innerText=
+"UGX "+Number(data.todayCommission).toLocaleString();
+
+document.getElementById("totalCommission").innerText=
+"UGX "+Number(data.totalCommission).toLocaleString();
+
+document.getElementById("refLink").value=data.referralLink;
+
+let html="";
+
+data.members.forEach(member=>{
+
+html+=`
+
+<div class="member">
+
+<div>
+
+<div class="member-name">${member.name}</div>
+
+<div class="commission">
+
+UGX ${Number(member.commission).toLocaleString()}
+
+</div>
+
+</div>
+
+<div class="level">
+
+${member.level}
+
+</div>
+
+</div>
+
+`;
+
+});
+
+document.getElementById("memberList").innerHTML=html;
+
+}catch(err){
+
+console.log(err);
+
+}
+
+}
+
+function copyReferral(){
+
+const input=document.getElementById("refLink");
+
+input.select();
+
+document.execCommand("copy");
+
+alert("Referral link copied.");
+
+}
+
+loadTeam();
+
+</script>
+
+</body>
+</html>

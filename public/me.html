@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>My Account</title>
+
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:'Segoe UI',sans-serif;
+}
+
+body{
+
+background:#0b0f19;
+color:white;
+padding-bottom:90px;
+
+}
+
+header{
+
+background:#111827;
+padding:18px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+position:sticky;
+top:0;
+z-index:100;
+border-bottom:1px solid #222;
+
+}
+
+header h2{
+
+color:#f59e0b;
+
+}
+
+.container{
+
+padding:15px;
+
+}
+
+.profile{
+
+background:#161d2d;
+border-radius:18px;
+padding:20px;
+text-align:center;
+margin-bottom:18px;
+
+}
+
+.profile img{
+
+width:90px;
+height:90px;
+border-radius:50%;
+object-fit:cover;
+border:3px solid #f59e0b;
+
+}
+
+.profile h3{
+
+margin-top:15px;
+font-size:22px;
+
+}
+
+.profile p{
+
+color:#999;
+margin-top:5px;
+
+}
+
+.wallet{
+
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:15px;
+margin-bottom:20px;
+
+}
+
+.wallet-card{
+
+background:#161d2d;
+padding:18px;
+border-radius:15px;
+text-align:center;
+
+}
+
+.wallet-card p{
+
+color:#aaa;
+font-size:14px;
+
+}
+
+.wallet-card h2{
+
+margin-top:8px;
+color:#f59e0b;
+
+}
+
+.buttons{
+
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:12px;
+margin-bottom:20px;
+
+}
+
+.action{
+
+background:#f59e0b;
+color:#000;
+padding:14px;
+border:none;
+border-radius:12px;
+font-weight:bold;
+font-size:15px;
+cursor:pointer;
+
+}
+
+.menu{
+
+background:#161d2d;
+border-radius:15px;
+overflow:hidden;
+
+}
+
+.menu-item{
+
+display:flex;
+justify-content:space-between;
+align-items:center;
+padding:18px;
+border-bottom:1px solid #252d40;
+text-decoration:none;
+color:white;
+
+}
+
+.menu-item:last-child{
+
+border-bottom:none;
+
+}
+
+.menu-left{
+
+display:flex;
+align-items:center;
+gap:15px;
+
+}
+
+.menu-left i{
+
+color:#f59e0b;
+font-size:18px;
+
+}
+
+.logout{
+
+background:#d63031;
+color:white;
+
+}
+
+.bottom-nav{
+
+position:fixed;
+bottom:0;
+left:0;
+width:100%;
+background:#111827;
+display:flex;
+justify-content:space-around;
+padding:12px 0;
+
+}
+
+.bottom-nav a{
+
+display:flex;
+flex-direction:column;
+align-items:center;
+text-decoration:none;
+color:#999;
+font-size:13px;
+
+}
+
+.bottom-nav a.active{
+
+color:#f59e0b;
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<header>
+
+<h2>My Account</h2>
+
+<i class="fa-solid fa-user-circle fa-xl"></i>
+
+</header>
+
+<div class="container"><!-- Profile Card -->
+
+<div class="profile">
+
+<img id="profilePhoto"
+src="https://ui-avatars.com/api/?name=User&background=f59e0b&color=000&size=256"
+alt="Profile">
+
+<h3 id="userName">Loading...</h3>
+
+<p id="userPhone">Loading...</p>
+
+<p id="userId">UID: Loading...</p>
+
+</div>
+
+<!-- Wallet -->
+
+<div class="wallet">
+
+<div class="wallet-card">
+
+<p>Available Balance</p>
+
+<h2 id="balance">UGX 0</h2>
+
+</div>
+
+<div class="wallet-card">
+
+<p>Total Earnings</p>
+
+<h2 id="earnings">UGX 0</h2>
+
+</div>
+
+<div class="wallet-card">
+
+<p>Today's Income</p>
+
+<h2 id="todayIncome">UGX 0</h2>
+
+</div>
+
+<div class="wallet-card">
+
+<p>Total Investments</p>
+
+<h2 id="investments">0</h2>
+
+</div>
+
+</div>
+
+<!-- Quick Actions -->
+
+<div class="buttons">
+
+<button class="action"
+onclick="location.href='deposit.html'">
+
+<i class="fa-solid fa-wallet"></i>
+
+Deposit
+
+</button>
+
+<button class="action"
+onclick="location.href='withdraw.html'">
+
+<i class="fa-solid fa-money-bill-transfer"></i>
+
+Withdraw
+
+</button>
+
+</div>
+
+<!-- Menu -->
+
+<div class="menu">
+
+<a class="menu-item"
+href="transactions.html">
+
+<div class="menu-left">
+
+<i class="fa-solid fa-clock-rotate-left"></i>
+
+<span>Transaction History</span>
+
+</div>
+
+<i class="fa-solid fa-angle-right"></i>
+
+</a>
+
+<a class="menu-item"
+href="order.html">
+
+<div class="menu-left">
+
+<i class="fa-solid fa-box"></i>
+
+<span>My Investments</span>
+
+</div>
+
+<i class="fa-solid fa-angle-right"></i>
+
+</a>
+
+<a class="menu-item"
+href="team.html">
+
+<div class="menu-left">
+
+<i class="fa-solid fa-users"></i>
+
+<span>My Team</span>
+
+</div>
+
+<i class="fa-solid fa-angle-right"></i>
+
+</a>
+
+<a class="menu-item"
+href="notifications.html">
+
+<div class="menu-left">
+
+<i class="fa-solid fa-bell"></i>
+
+<span>Notifications</span>
+
+</div>
+
+<i class="fa-solid fa-angle-right"></i>
+
+</a>
+
+<a class="menu-item"
+href="settings.html">
+
+<div class="menu-left">
+
+<i class="fa-solid fa-gear"></i>
+
+<span>Settings</span>
+
+</div>
+
+<i class="fa-solid fa-angle-right"></i>
+
+</a>
+
+<a class="menu-item"
+href="support.html">
+
+<div class="menu-left">
+
+<i class="fa-solid fa-headset"></i>
+
+<span>Customer Support</span>
+
+</div>
+
+<i class="fa-solid fa-angle-right"></i>
+
+</a>
+
+<a class="menu-item logout"
+href="#"
+onclick="logout()">
+
+<div class="menu-left">
+
+<i class="fa-solid fa-right-from-bracket"></i>
+
+<span>Logout</span>
+
+</div>
+
+<i class="fa-solid fa-angle-right"></i>
+
+</a>
+
+</div>
+
+</div>
+
+<!-- Bottom Navigation -->
+
+<nav class="bottom-nav">
+
+<a href="index.html">
+
+<i class="fa-solid fa-house"></i>
+
+<span>Home</span>
+
+</a>
+
+<a href="order.html">
+
+<i class="fa-solid fa-chart-line"></i>
+
+<span>Orders</span>
+
+</a>
+
+<a href="team.html">
+
+<i class="fa-solid fa-users"></i>
+
+<span>Team</span>
+
+</a>
+
+<a href="me.html" class="active">
+
+<i class="fa-solid fa-user"></i>
+
+<span>Me</span>
+
+</a>
+
+</nav>
+<script>
+
+async function loadProfile(){
+
+try{
+
+const response = await fetch('/api/user/profile');
+
+const data = await response.json();
+
+if(!data || !data.phone){
+
+window.location.href='login.html';
+return;
+
+}
+
+document.getElementById('userName').innerText =
+data.name || "User";
+
+document.getElementById('userPhone').innerText =
+data.phone || "";
+
+document.getElementById('userId').innerText =
+"UID: " + (data.uid || "N/A");
+
+document.getElementById('balance').innerText =
+"UGX " + Number(data.balance || 0).toLocaleString();
+
+document.getElementById('earnings').innerText =
+"UGX " + Number(data.totalEarnings || 0).toLocaleString();
+
+document.getElementById('todayIncome').innerText =
+"UGX " + Number(data.todayIncome || 0).toLocaleString();
+
+document.getElementById('investments').innerText =
+Number(data.totalInvestments || 0);
+
+if(data.profilePhoto){
+
+document.getElementById('profilePhoto').src =
+data.profilePhoto;
+
+}
+
+}catch(error){
+
+console.error(error);
+
+alert("Failed to load profile.");
+
+}
+
+}
+
+async function logout(){
+
+const confirmLogout = confirm(
+"Are you sure you want to logout?"
+);
+
+if(!confirmLogout) return;
+
+try{
+
+await fetch('/api/logout',{
+method:'POST'
+});
+
+localStorage.removeItem('token');
+
+window.location.href='login.html';
+
+}catch(error){
+
+alert("Logout failed.");
+
+}
+
+}
+
+loadProfile();
+
+</script>
+
+</body>
+</html>

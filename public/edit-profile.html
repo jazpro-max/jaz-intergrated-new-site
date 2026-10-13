@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0">
+
+<title>Edit Profile</title>
+
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Segoe UI,sans-serif;
+}
+
+body{
+background:#0b0f19;
+color:white;
+padding:20px;
+padding-bottom:90px;
+}
+
+.container{
+max-width:600px;
+margin:auto;
+}
+
+h2{
+text-align:center;
+margin-bottom:20px;
+color:#f59e0b;
+}
+
+.profile-image{
+text-align:center;
+margin-bottom:25px;
+}
+
+.profile-image img{
+width:120px;
+height:120px;
+border-radius:50%;
+object-fit:cover;
+border:4px solid #f59e0b;
+}
+
+.profile-image input{
+display:none;
+}
+
+.profile-image label{
+display:inline-block;
+margin-top:12px;
+padding:10px 20px;
+background:#f59e0b;
+color:black;
+border-radius:8px;
+cursor:pointer;
+font-weight:bold;
+}
+
+.form-group{
+margin-bottom:18px;
+}
+
+.form-group label{
+display:block;
+margin-bottom:6px;
+}
+
+.form-group input{
+width:100%;
+padding:14px;
+border:none;
+border-radius:10px;
+background:#20293d;
+color:white;
+}
+
+button{
+width:100%;
+padding:15px;
+background:#f59e0b;
+border:none;
+border-radius:12px;
+font-size:16px;
+font-weight:bold;
+cursor:pointer;
+}
+
+button:hover{
+background:#ffb300;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h2>Edit Profile</h2>
+
+<div class="profile-image">
+
+<img
+src="https://via.placeholder.com/120"
+id="preview">
+
+<br>
+
+<label for="photo">
+
+<i class="fa-solid fa-camera"></i>
+
+Change Photo
+
+</label>
+
+<input
+type="file"
+id="photo"
+accept="image/*">
+
+</div>
+
+<form id="profileForm">
+
+<div class="form-group">
+
+<label>Full Name</label>
+
+<input
+type="text"
+id="name"
+required>
+
+</div>
+
+<div class="form-group">
+
+<label>Email</label>
+
+<input
+type="email"
+id="email"
+required>
+
+</div>
+
+<div class="form-group">
+
+<label>Phone Number</label>
+
+<input
+type="tel"
+id="phone"
+required>
+
+</div>
+
+<div class="form-group">
+
+<label>Country</label>
+
+<input
+type="text"
+id="country">
+
+</div>
+
+<div class="form-group">
+
+<label>City</label>
+
+<input
+type="text"
+id="city">
+
+</div>
+
+<div class="form-group">
+
+<label>Address</label>
+
+<input
+type="text"
+id="address">
+
+</div>
+
+<button type="submit">
+
+Save Changes
+
+</button>
+
+</form>
+
+</div>
+<script>
+
+// Preview selected profile picture
+document.getElementById("photo").addEventListener("change", function () {
+
+    const file = this.files[0];
+
+    if (file) {
+
+        document.getElementById("preview").src =
+            URL.createObjectURL(file);
+
+    }
+
+});
+
+// Load current user profile
+async function loadProfile() {
+
+    try {
+
+        const response = await fetch("/api/profile");
+
+        const user = await response.json();
+
+        document.getElementById("name").value = user.name || "";
+
+        document.getElementById("email").value = user.email || "";
+
+        document.getElementById("phone").value = user.phone || "";
+
+        document.getElementById("country").value = user.country || "";
+
+        document.getElementById("city").value = user.city || "";
+
+        document.getElementById("address").value = user.address || "";
+
+        if (user.photo) {
+
+            document.getElementById("preview").src = user.photo;
+
+        }
+
+    } catch (error) {
+
+        console.error(error);
+
+        alert("Unable to load profile.");
+
+    }
+
+}
+
+// Save profile
+document.getElementById("profileForm")
+.addEventListener("submit", async function (e) {
+
+    e.preventDefault();
+
+    const formData = new FormData();
+
+    formData.append("name",
+        document.getElementById("name").value);
+
+    formData.append("email",
+        document.getElementById("email").value);
+
+    formData.append("phone",
+        document.getElementById("phone").value);
+
+    formData.append("country",
+        document.getElementById("country").value);
+
+    formData.append("city",
+        document.getElementById("city").value);
+
+    formData.append("address",
+        document.getElementById("address").value);
+
+    const photo =
+        document.getElementById("photo").files[0];
+
+    if (photo) {
+
+        formData.append("photo", photo);
+
+    }
+
+    try {
+
+        const response = await fetch("/api/profile", {
+
+            method: "PUT",
+
+            body: formData
+
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+
+            alert(result.message || "Profile updated successfully.");
+
+            loadProfile();
+
+        } else {
+
+            alert(result.message || "Failed to update profile.");
+
+        }
+
+    } catch (error) {
+
+        console.error(error);
+
+        alert("Server connection failed.");
+
+    }
+
+});
+
+// Load profile when page opens
+loadProfile();
+
+</script>
+
+</body>
+
+</html>

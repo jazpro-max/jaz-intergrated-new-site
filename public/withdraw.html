@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0">
+
+<title>Withdraw Funds</title>
+
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+<style>
+
+*{
+
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Segoe UI,sans-serif;
+
+}
+
+body{
+
+background:#0b0f19;
+color:white;
+padding-bottom:90px;
+
+}
+
+header{
+
+background:#111827;
+padding:18px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+border-bottom:1px solid #1f2937;
+position:sticky;
+top:0;
+z-index:100;
+
+}
+
+header h2{
+
+color:#f59e0b;
+
+}
+
+.container{
+
+max-width:700px;
+margin:auto;
+padding:16px;
+
+}
+
+.card{
+
+background:#161d2d;
+padding:20px;
+border-radius:18px;
+margin-bottom:18px;
+box-shadow:0 5px 18px rgba(0,0,0,.3);
+
+}
+
+.card-title{
+
+font-size:18px;
+font-weight:bold;
+color:#f59e0b;
+margin-bottom:15px;
+
+}
+
+.balance{
+
+font-size:34px;
+font-weight:bold;
+margin-top:10px;
+
+}
+
+.balance span{
+
+font-size:16px;
+color:#9ca3af;
+
+}
+
+label{
+
+display:block;
+margin-top:15px;
+margin-bottom:6px;
+
+}
+
+input,
+select{
+
+width:100%;
+padding:14px;
+background:#20293d;
+border:1px solid #374151;
+border-radius:10px;
+color:white;
+font-size:15px;
+
+}
+
+input:focus,
+select:focus{
+
+outline:none;
+border-color:#f59e0b;
+
+}
+
+button{
+
+width:100%;
+padding:15px;
+background:#f59e0b;
+border:none;
+border-radius:12px;
+margin-top:20px;
+font-weight:bold;
+font-size:16px;
+cursor:pointer;
+
+}
+
+button:hover{
+
+background:#ffb300;
+
+}
+
+.history{
+
+background:#20293d;
+padding:15px;
+border-radius:12px;
+margin-top:15px;
+
+}
+
+.status{
+
+padding:5px 12px;
+border-radius:20px;
+font-size:12px;
+font-weight:bold;
+
+}
+
+.pending{
+
+background:#f59e0b;
+color:#000;
+
+}
+
+.approved{
+
+background:#10b981;
+
+}
+
+.rejected{
+
+background:#ef4444;
+
+}
+
+.bottom-nav{
+
+position:fixed;
+bottom:0;
+left:0;
+width:100%;
+background:#111827;
+display:flex;
+justify-content:space-around;
+padding:12px 0;
+
+}
+
+.bottom-nav a{
+
+text-decoration:none;
+color:#9ca3af;
+display:flex;
+flex-direction:column;
+align-items:center;
+font-size:13px;
+
+}
+
+.bottom-nav a.active{
+
+color:#f59e0b;
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<header>
+
+<h2>Withdraw</h2>
+
+<i class="fa-solid fa-money-bill-transfer fa-lg"></i>
+
+</header>
+
+<div class="container">
+
+<div class="card">
+
+<div class="card-title">
+
+Available Balance
+
+</div>
+
+<div class="balance">
+
+UGX <span id="balance">0</span>
+
+</div>
+
+</div>
+<!-- Withdrawal Form -->
+
+<div class="card">
+
+<div class="card-title">
+
+Request Withdrawal
+
+</div>
+
+<form id="withdrawForm">
+
+<label>Withdrawal Method</label>
+
+<select id="method" required>
+
+<option value="MTN">MTN Mobile Money</option>
+
+<option value="Airtel">Airtel Money</option>
+
+<option value="Bank">Bank Transfer</option>
+
+</select>
+
+<label>Phone / Account Number</label>
+
+<input
+type="text"
+id="account"
+placeholder="Enter phone or bank account number"
+required>
+
+<label>Account Name</label>
+
+<input
+type="text"
+id="accountName"
+placeholder="Enter account holder name"
+required>
+
+<label>Withdrawal Amount (UGX)</label>
+
+<input
+type="number"
+id="amount"
+placeholder="Minimum withdrawal 10,000 UGX"
+min="10000"
+required>
+
+<label>Transaction PIN</label>
+
+<input
+type="password"
+id="pin"
+maxlength="6"
+placeholder="Enter your 6-digit PIN"
+required>
+
+<button type="submit">
+
+<i class="fa-solid fa-paper-plane"></i>
+
+Submit Withdrawal
+
+</button>
+
+</form>
+
+</div>
+
+<!-- Withdrawal History -->
+
+<div class="card">
+
+<div class="card-title">
+
+Withdrawal History
+
+</div>
+
+<div id="withdrawHistory">
+
+<div class="history">
+
+<p>No withdrawal history found.</p>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+<!-- Bottom Navigation -->
+
+<nav class="bottom-nav">
+
+<a href="index.html">
+
+<i class="fa-solid fa-house"></i>
+
+<span>Home</span>
+
+</a>
+
+<a href="order.html">
+
+<i class="fa-solid fa-chart-line"></i>
+
+<span>Orders</span>
+
+</a>
+
+<a href="team.html">
+
+<i class="fa-solid fa-users"></i>
+
+<span>Team</span>
+
+</a>
+
+<a href="me.html" class="active">
+
+<i class="fa-solid fa-user"></i>
+
+<span>Me</span>
+
+</a>
+
+</nav>
+<script>
+
+async function loadBalance(){
+
+try{
+
+const response = await fetch('/api/user/balance');
+
+const data = await response.json();
+
+document.getElementById('balance').innerText =
+Number(data.balance || 0).toLocaleString();
+
+}catch(error){
+
+console.error(error);
+
+}
+
+}
+
+async function loadWithdrawHistory(){
+
+try{
+
+const response = await fetch(
+'/api/withdrawals/history'
+);
+
+const withdrawals = await response.json();
+
+const history =
+document.getElementById('withdrawHistory');
+
+if(!Array.isArray(withdrawals) ||
+withdrawals.length===0){
+
+history.innerHTML=`
+
+<div class="history">
+
+<p>No withdrawal history found.</p>
+
+</div>
+
+`;
+
+return;
+
+}
+
+history.innerHTML='';
+
+withdrawals.forEach(item=>{
+
+let statusClass='pending';
+
+if(item.status==='Approved')
+statusClass='approved';
+
+if(item.status==='Rejected')
+statusClass='rejected';
+
+history.innerHTML+=`
+
+<div class="history">
+
+<h4>
+UGX ${Number(item.amount).toLocaleString()}
+</h4>
+
+<p>Method: ${item.method}</p>
+
+<p>Account: ${item.account}</p>
+
+<p>Date:
+${new Date(item.created_at)
+.toLocaleString()}
+</p>
+
+<br>
+
+<span class="status ${statusClass}">
+${item.status}
+</span>
+
+</div>
+
+`;
+
+});
+
+}catch(error){
+
+console.error(error);
+
+}
+
+}
+
+document
+.getElementById('withdrawForm')
+.addEventListener(
+'submit',
+async function(e){
+
+e.preventDefault();
+
+const amount =
+Number(
+document.getElementById('amount').value
+);
+
+const currentBalance =
+Number(
+document.getElementById('balance')
+.innerText.replace(/,/g,'')
+);
+
+if(amount>currentBalance){
+
+alert('Insufficient balance.');
+
+return;
+
+}
+
+try{
+
+const response = await fetch(
+'/api/withdraw',
+{
+method:'POST',
+headers:{
+'Content-Type':'application/json'
+},
+body:JSON.stringify({
+
+method:
+document.getElementById('method').value,
+
+account:
+document.getElementById('account').value,
+
+accountName:
+document.getElementById('accountName').value,
+
+amount,
+
+pin:
+document.getElementById('pin').value
+
+})
+}
+);
+
+const result = await response.json();
+
+if(response.ok){
+
+alert(
+result.message ||
+'Withdrawal submitted.'
+);
+
+document
+.getElementById('withdrawForm')
+.reset();
+
+loadBalance();
+
+loadWithdrawHistory();
+
+}else{
+
+alert(
+result.message ||
+'Withdrawal failed.'
+);
+
+}
+
+}catch(error){
+
+console.error(error);
+
+alert(
+'Unable to connect to server.'
+);
+
+}
+
+});
+
+loadBalance();
+
+loadWithdrawHistory();
+
+</script>
+
+</body>
+</html>
