@@ -1,242 +1,361 @@
 /**
- * Wallet Platform - single-file backend
- * Covers: register, login, index, me, order, team, withdrawal, deposit,
- * settings, notification, support, forgot-password, change-pin,
- * transaction, change-password, admin.
+ * Wallet Platform API — single-file Express + MongoDB backend
  *
- * Env vars needed (set these in Render's dashboard, not in this file):
- * MONGO_URI, JWT_SECRET, PORT (optional), CLIENT_URL (optional)
+ * Render environment variables:
+ *   MONGO_URI      MongoDB Atlas connection string
+ *   JWT_SECRET     Long random secret
+ *   PORT           Optional (Render supplies this)
+ *   CLIENT_URL     Optional frontend origin
+ *
+ * Install dependencies:
+ *   npm install express mongoose bcryptjs jsonwebtoken dotenv cors multer
+ *
+ * Notes:
+ * - All money amounts are stored as numeric UGX amounts (not USD).
+ * - Deposits remain pending until an admin approves them.
+ * - Order returns are demo/platform rules, not guaranteed real-world earnings.
+ * - Daily accrual catches up elapsed calendar days when an authenticated API
+ *   request is made. For strict scheduled processing, add a persistent worker.
  */
 
 require('dotenv').config();
+
 const express = require('express');
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const cors = require('cors');
+const multer = require('multer');
+const path = require('path');
 
 const app = express();
-app.use(cors());
-app.use(express.json());
-const path = require('path');
+app.set('trust proxy', 1);
+
+const corsOptions = process.env.CLIENT_URL
+  ? { origin: process.env.CLIENT_URL.split(',').map(s => s.trim()), credentials: true }
+  : {};
+app.use(cors(corsOptions));
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'login.html'));
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 2 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const allowed = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+    if (!allowed.includes(file.mimetype)) {
+      return cb(new Error('Receipt must be JPG, PNG, WEBP, or PDF.'));
+    }
+    cb(null, true);
+  }
 });
-// ---------------------------------------------------------------------------
-// MODELS
-// ---------------------------------------------------------------------------
 
-const userSchema = new mongoose.Schema(
-  {
-    name: { type: String, required: true },
-    email: { type: String, required: true, unique: true, lowercase: true },
-    phone: { type: String, required: true, unique: true },
-    password: { type: String, required: true, select: false },
-    pin: { type: String, select: false },
-    role: { type: String, enum: ['user', 'admin'], default: 'user' },
-    status: { type: String, enum: ['active', 'suspended'], default: 'active' },
-    referralCode: { type: String, unique: true },
-    referredBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
-    walletBalance: { type: Number, default: 0 },
-    commissionBalance: { type: Number, default: 0 },
-    resetPasswordToken: { type: String, select: false },
-    resetPasswordExpire: { type: Date, select: false },
-  },
-  { timestamps: true }
-);
-userSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) return next();
-  this.password = await bcrypt.hash(this.password, 10);
-  next();
+const UGX = value => Math.round(Number(value) || 0);
+const isPositiveAmount = value => Number.isFinite(Number(value)) && Number(value) > 0;
+const safeUser = user => ({
+  id: user._id,
+  name: user.name,
+  email: user.email,
+  phone: user.phone,
+  role: user.role,
+  status: user.status,
+  referralCode: user.referralCode,
+  walletBalance: user.walletBalance || 0,
+  commissionBalance: user.commissionBalance || 0,
+  currency: 'UGX'
+});
+
+// -----------------------------------------------------------------------------
+// MODELS
+// -----------------------------------------------------------------------------
+const userSchema = new mongoose.Schema({
+  name: { type: String, required: true, trim: true },
+  email: { type: String, required: true, unique: true, lowercase: true, trim: true },
+  phone: { type: String, required: true, unique: true, trim: true },
+  password: { type: String, required: true, select: false },
+  pin: { type: String, select: false },
+  role: { type: String, enum: ['user', 'admin'], default: 'user' },
+  status: { type: String, enum: ['active', 'suspended'], default: 'active' },
+  referralCode: { type: String, unique: true, sparse: true },
+  referredBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+  walletBalance: { type: Number, default: 0, min: 0 },
+  commissionBalance: { type: Number, default: 0, min: 0 },
+  resetPasswordToken: { type: String, select: false },
+  resetPasswordExpire: { type: Date, select: false }
+}, { timestamps: true });
+
+userSchema.pre('save', async function () {
+  if (this.isModified('password')) this.password = await bcrypt.hash(this.password, 10);
 });
 userSchema.methods.matchPassword = function (entered) {
-  return bcrypt.compare(entered, this.password);
+  return bcrypt.compare(String(entered || ''), this.password);
 };
 userSchema.methods.setPin = async function (pin) {
-  this.pin = await bcrypt.hash(pin, 10);
+  this.pin = await bcrypt.hash(String(pin), 10);
 };
 userSchema.methods.matchPin = function (entered) {
-  return this.pin ? bcrypt.compare(entered, this.pin) : Promise.resolve(false);
+  return this.pin ? bcrypt.compare(String(entered || ''), this.pin) : Promise.resolve(false);
 };
 const User = mongoose.model('User', userSchema);
 
-const orderSchema = new mongoose.Schema(
-  {
-    user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-    planName: String,
-    amount: { type: Number, required: true },
-    dailyReturnPercent: { type: Number, default: 0 },
-    durationDays: { type: Number, default: 30 },
-    status: { type: String, enum: ['active', 'completed', 'cancelled'], default: 'active' },
-  },
-  { timestamps: true }
-);
+const orderSchema = new mongoose.Schema({
+  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+  planName: { type: String, required: true },
+  amount: { type: Number, required: true, min: 1 },
+  dailyReturnPercent: { type: Number, default: 0, min: 0 },
+  durationDays: { type: Number, default: 30, min: 1 },
+  daysAccrued: { type: Number, default: 0 },
+  earnedCommission: { type: Number, default: 0 },
+  lastAccruedAt: { type: Date, default: Date.now },
+  status: { type: String, enum: ['active', 'completed', 'cancelled'], default: 'active' }
+}, { timestamps: true });
 const Order = mongoose.model('Order', orderSchema);
 
-const transactionSchema = new mongoose.Schema(
-  {
-    user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-    type: { type: String, enum: ['deposit', 'withdrawal', 'commission', 'order', 'adjustment'], required: true },
-    amount: { type: Number, required: true },
-    fee: { type: Number, default: 0 },
-    status: { type: String, enum: ['pending', 'approved', 'rejected', 'completed'], default: 'pending' },
-    method: String,
-    accountDetails: String,
-    note: String,
-  },
-  { timestamps: true }
-);
+const transactionSchema = new mongoose.Schema({
+  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+  type: { type: String, enum: ['deposit', 'withdrawal', 'commission', 'order', 'adjustment'], required: true },
+  amount: { type: Number, required: true },
+  fee: { type: Number, default: 0 },
+  status: { type: String, enum: ['pending', 'approved', 'rejected', 'completed'], default: 'pending' },
+  method: String,
+  accountDetails: String,
+  note: String,
+  network: String,
+  transactionId: String,
+  receiptData: Buffer,
+  receiptContentType: String,
+  reviewedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+  reviewedAt: Date
+}, { timestamps: true });
 const Transaction = mongoose.model('Transaction', transactionSchema);
 
-const notificationSchema = new mongoose.Schema(
-  {
-    user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
-    title: String,
-    message: String,
-    type: { type: String, default: 'info' },
-    isRead: { type: Boolean, default: false },
-    readBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
-  },
-  { timestamps: true }
-);
+const notificationSchema = new mongoose.Schema({
+  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null, index: true },
+  title: { type: String, required: true },
+  message: { type: String, required: true },
+  type: { type: String, default: 'info' },
+  isRead: { type: Boolean, default: false },
+  readBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
+}, { timestamps: true });
 const Notification = mongoose.model('Notification', notificationSchema);
 
-const supportSchema = new mongoose.Schema(
-  {
-    user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-    subject: String,
+const supportSchema = new mongoose.Schema({
+  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  subject: String,
+  message: String,
+  status: { type: String, enum: ['open', 'pending', 'closed'], default: 'open' },
+  replies: [{
+    sender: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    senderRole: String,
     message: String,
-    status: { type: String, enum: ['open', 'pending', 'closed'], default: 'open' },
-    replies: [
-      {
-        sender: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-        senderRole: String,
-        message: String,
-        createdAt: { type: Date, default: Date.now },
-      },
-    ],
-  },
-  { timestamps: true }
-);
+    createdAt: { type: Date, default: Date.now }
+  }]
+}, { timestamps: true });
 const Support = mongoose.model('Support', supportSchema);
 
 const settingsSchema = new mongoose.Schema({
   key: { type: String, default: 'global', unique: true },
   minDeposit: { type: Number, default: 1000 },
   minWithdrawal: { type: Number, default: 1000 },
-  withdrawalFeePercent: { type: Number, default: 5 },
-  referralLevel1Percent: { type: Number, default: 10 },
-  referralLevel2Percent: { type: Number, default: 3 },
-});
+  withdrawalFeePercent: { type: Number, default: 0 },
+  referralLevel1Percent: { type: Number, default: 0 },
+  referralLevel2Percent: { type: Number, default: 0 }
+}, { timestamps: true });
 const Settings = mongoose.model('Settings', settingsSchema);
-const getSettings = async () => (await Settings.findOne({ key: 'global' })) || Settings.create({ key: 'global' });
 
-// ---------------------------------------------------------------------------
-// AUTH MIDDLEWARE
-// ---------------------------------------------------------------------------
+async function getSettings() {
+  let settings = await Settings.findOne({ key: 'global' });
+  if (!settings) settings = await Settings.create({ key: 'global' });
+  return settings;
+}
 
+async function notify(user, title, message, type = 'info') {
+  return Notification.create({ user: user || null, title, message, type });
+}
+
+async function makeTransaction(data) {
+  return Transaction.create(data);
+}
+
+// -----------------------------------------------------------------------------
+// AUTH / COMMON MIDDLEWARE
+// -----------------------------------------------------------------------------
+const genToken = id => {
+  if (!process.env.JWT_SECRET) throw new Error('JWT_SECRET is not configured');
+  return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+};
 const protect = async (req, res, next) => {
   try {
-    const header = req.headers.authorization;
-    if (!header || !header.startsWith('Bearer ')) {
-      return res.status(401).json({ success: false, message: 'No token' });
+    const header = req.headers.authorization || '';
+    if (!header.startsWith('Bearer ')) {
+      return res.status(401).json({ success: false, message: 'Please log in again (missing token).' });
     }
-    const decoded = jwt.verify(header.split(' ')[1], process.env.JWT_SECRET);
+    const decoded = jwt.verify(header.slice(7), process.env.JWT_SECRET);
     const user = await User.findById(decoded.id);
-    if (!user) return res.status(401).json({ success: false, message: 'User not found' });
-    if (user.status === 'suspended') return res.status(403).json({ success: false, message: 'Suspended' });
+    if (!user) return res.status(401).json({ success: false, message: 'User not found.' });
+    if (user.status === 'suspended') return res.status(403).json({ success: false, message: 'Account suspended.' });
     req.user = user;
     next();
-  } catch {
-    res.status(401).json({ success: false, message: 'Invalid token' });
+  } catch (err) {
+    return res.status(401).json({ success: false, message: 'Invalid or expired login token.' });
   }
 };
 const adminOnly = (req, res, next) => {
-  if (req.user.role !== 'admin') return res.status(403).json({ success: false, message: 'Admin only' });
+  if (req.user.role !== 'admin') return res.status(403).json({ success: false, message: 'Admin only.' });
   next();
 };
-const genToken = (id) => jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '7d' });
-const genReferralCode = async (name) => {
-  const base = (name || 'user').replace(/[^a-zA-Z]/g, '').slice(0, 4).toUpperCase() || 'USER';
-  let code, exists = true;
-  while (exists) {
-    code = `${base}${Math.floor(1000 + Math.random() * 9000)}`;
-    exists = await User.findOne({ referralCode: code });
+async function genReferralCode(name) {
+  const base = (name || 'USER').replace(/[^a-z]/gi, '').slice(0, 4).toUpperCase() || 'USER';
+  for (let i = 0; i < 20; i++) {
+    const code = `${base}${crypto.randomInt(1000, 10000)}`;
+    if (!(await User.exists({ referralCode: code }))) return code;
   }
-  return code;
-};
+  return crypto.randomBytes(5).toString('hex').toUpperCase();
+}
 
-// ---------------------------------------------------------------------------
-// ROUTES: health
-// ---------------------------------------------------------------------------
-app.get('/api/health', (req, res) => res.json({ success: true, message: 'API is running' }));
+// Accrue each full elapsed calendar day once, capped at durationDays.
+// The accrued amount goes into commissionBalance, not the spendable wallet.
+async function accrueUserOrders(userId) {
+  const orders = await Order.find({ user: userId, status: 'active' });
+  const now = new Date();
+  for (const order of orders) {
+    const last = new Date(order.lastAccruedAt || order.createdAt);
+    const elapsed = Math.max(0, Math.floor((now - last) / 86400000));
+    const daysToAdd = Math.min(elapsed, Math.max(0, order.durationDays - order.daysAccrued));
+    if (daysToAdd <= 0) {
+      if (order.daysAccrued >= order.durationDays && order.status === 'active') {
+        order.status = 'completed';
+        await order.save();
+      }
+      continue;
+    }
+    const daily = UGX(order.amount * (order.dailyReturnPercent / 100));
+    const earned = daily * daysToAdd;
+    order.daysAccrued += daysToAdd;
+    order.earnedCommission += earned;
+    order.lastAccruedAt = new Date(last.getTime() + daysToAdd * 86400000);
+    if (order.daysAccrued >= order.durationDays) order.status = 'completed';
+    await order.save();
 
-// ---------------------------------------------------------------------------
-// ROUTES: auth (register, login, forgot/reset/change password, change pin)
-// ---------------------------------------------------------------------------
+    if (earned > 0) {
+      await User.updateOne({ _id: userId }, { $inc: { commissionBalance: earned } });
+      await makeTransaction({
+        user: userId, type: 'commission', amount: earned, status: 'completed',
+        note: `Order ${order._id}: ${daysToAdd} day(s) accrued`
+      });
+      await notify(userId, 'Order commission added',
+        `UGX ${earned.toLocaleString('en-UG')} commission was recorded for ${order.planName}.`, 'success');
+    }
+  }
+}
 
+// -----------------------------------------------------------------------------
+// HEALTH / FRONTEND
+// -----------------------------------------------------------------------------
+app.get('/api/health', (req, res) => res.json({
+  success: true, message: 'API is running', currency: 'UGX',
+  database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
+}));
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'login.html')));
+
+// -----------------------------------------------------------------------------
+// AUTH
+// -----------------------------------------------------------------------------
 app.post('/api/register', async (req, res, next) => {
   try {
-    const { name, email, phone, password, pin, referralCode } = req.body;
+    const { name, email, phone, password, referralCode } = req.body;
     if (!name || !email || !phone || !password) {
-      return res.status(400).json({ success: false, message: 'All fields required' });
+      return res.status(400).json({ success: false, message: 'Name, email, phone and password are required.' });
     }
-    if (await User.findOne({ $or: [{ email }, { phone }] })) {
-      return res.status(400).json({ success: false, message: 'Email or phone already registered' });
+    const normalizedEmail = String(email).toLowerCase().trim();
+    if (await User.findOne({ $or: [{ email: normalizedEmail }, { phone: String(phone).trim() }] })) {
+      return res.status(409).json({ success: false, message: 'Email or phone already registered.' });
     }
     let referredBy = null;
     if (referralCode) {
-      const referrer = await User.findOne({ referralCode });
+      const referrer = await User.findOne({ referralCode: String(referralCode).trim().toUpperCase() });
       if (referrer) referredBy = referrer._id;
     }
-    const user = new User({
-      name, email, phone, password, referredBy,
-      referralCode: await genReferralCode(name),
+    const user = await User.create({
+      name: String(name).trim(), email: normalizedEmail, phone: String(phone).trim(),
+      password, referredBy, referralCode: await genReferralCode(name)
     });
-  
-    await user.save();
-    res.status(201).json({
-      success: true,
-      token: genToken(user._id),
-      user: { id: user._id, name: user.name, email: user.email, referralCode: user.referralCode, role: user.role },
-    });
+    await notify(user._id, 'Welcome', 'Your account has been created.', 'success');
+    res.status(201).json({ success: true, token: genToken(user._id), user: safeUser(user) });
   } catch (err) { next(err); }
 });
 
 app.post('/api/login', async (req, res, next) => {
   try {
     const { emailOrPhone, password } = req.body;
-    const user = await User.findOne({ $or: [{ email: emailOrPhone?.toLowerCase() }, { phone: emailOrPhone }] }).select('+password');
+    if (!emailOrPhone || !password) return res.status(400).json({ success: false, message: 'Email/phone and password required.' });
+    const value = String(emailOrPhone).trim();
+    const user = await User.findOne({ $or: [{ email: value.toLowerCase() }, { phone: value }] }).select('+password');
     if (!user || !(await user.matchPassword(password))) {
-      return res.status(401).json({ success: false, message: 'Invalid credentials' });
+      return res.status(401).json({ success: false, message: 'Invalid credentials.' });
     }
-    if (user.status === 'suspended') return res.status(403).json({ success: false, message: 'Account suspended' });
-    res.json({ success: true, token: genToken(user._id), user: { id: user._id, name: user.name, email: user.email, role: user.role } });
+    if (user.status === 'suspended') return res.status(403).json({ success: false, message: 'Account suspended.' });
+    res.json({ success: true, token: genToken(user._id), user: safeUser(user) });
   } catch (err) { next(err); }
 });
 
+app.get('/api/users/me', protect, async (req, res) => {
+  await accrueUserOrders(req.user._id);
+  const user = await User.findById(req.user._id);
+  res.json({ success: true, user: safeUser(user) });
+});
+app.put('/api/users/me', protect, async (req, res, next) => {
+  try {
+    const updates = {};
+    if (req.body.name !== undefined) updates.name = String(req.body.name).trim();
+    if (req.body.phone !== undefined) updates.phone = String(req.body.phone).trim();
+    const user = await User.findByIdAndUpdate(req.user._id, updates, { new: true, runValidators: true });
+    res.json({ success: true, user: safeUser(user) });
+  } catch (err) { next(err); }
+});
+app.put('/api/auth/change-password', protect, async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user._id).select('+password');
+    if (!(await user.matchPassword(req.body.currentPassword))) return res.status(401).json({ success: false, message: 'Current password incorrect.' });
+    if (!req.body.newPassword || String(req.body.newPassword).length < 8) return res.status(400).json({ success: false, message: 'New password must be at least 8 characters.' });
+    user.password = req.body.newPassword;
+    await user.save();
+    res.json({ success: true, message: 'Password changed.' });
+  } catch (err) { next(err); }
+});
+app.put('/api/auth/change-pin', protect, async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user._id).select('+pin');
+    if (user.pin && !(await user.matchPin(req.body.currentPin))) return res.status(401).json({ success: false, message: 'Current PIN incorrect.' });
+    if (!/^\d{4,6}$/.test(String(req.body.newPin || ''))) return res.status(400).json({ success: false, message: 'PIN must be 4–6 digits.' });
+    await user.setPin(req.body.newPin);
+    await user.save();
+    res.json({ success: true, message: 'PIN updated.' });
+  } catch (err) { next(err); }
+});
 app.post('/api/auth/forgot-password', async (req, res, next) => {
   try {
-    const user = await User.findOne({ email: (req.body.email || '').toLowerCase() });
-    if (!user) return res.json({ success: true, message: 'If that email exists, a reset link has been sent' });
+    const user = await User.findOne({ email: String(req.body.email || '').toLowerCase() });
+    // Do not reveal whether an account exists.
+    if (!user) return res.json({ success: true, message: 'If the account exists, follow the password reset process.' });
     const rawToken = crypto.randomBytes(32).toString('hex');
     user.resetPasswordToken = crypto.createHash('sha256').update(rawToken).digest('hex');
-    user.resetPasswordExpire = Date.now() + 30 * 60 * 1000;
+    user.resetPasswordExpire = new Date(Date.now() + 30 * 60 * 1000);
     await user.save();
-    // NOTE: plug in real email sending here (e.g. nodemailer). For now the
-    // raw token is returned in the response so you can test end-to-end.
-    res.json({ success: true, message: 'Reset token generated', resetToken: rawToken });
+    // Demo only: connect a mail provider before production use.
+    res.json({ success: true, message: 'Demo reset token generated.', resetToken: rawToken });
   } catch (err) { next(err); }
 });
-
 app.put('/api/auth/reset-password/:token', async (req, res, next) => {
   try {
     const hashed = crypto.createHash('sha256').update(req.params.token).digest('hex');
-    const user = await User.findOne({ resetPasswordToken: hashed, resetPasswordExpire: { $gt: Date.now() } }).select('+resetPasswordToken +resetPasswordExpire');
-    if (!user) return res.status(400).json({ success: false, message: 'Invalid or expired token' });
+    const user = await User.findOne({
+      resetPasswordToken: hashed, resetPasswordExpire: { $gt: new Date() }
+    }).select('+resetPasswordToken +resetPasswordExpire');
+    if (!user) return res.status(400).json({ success: false, message: 'Invalid or expired token.' });
+    if (!req.body.password || String(req.body.password).length < 8) return res.status(400).json({ success: false, message: 'Password must be at least 8 characters.' });
     user.password = req.body.password;
     user.resetPasswordToken = undefined;
     user.resetPasswordExpire = undefined;
@@ -245,519 +364,67 @@ app.put('/api/auth/reset-password/:token', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-app.put('/api/auth/change-password', protect, async (req, res, next) => {
-  try {
-    const user = await User.findById(req.user._id).select('+password');
-    if (!(await user.matchPassword(req.body.currentPassword))) {
-      return res.status(401).json({ success: false, message: 'Current password incorrect' });
-    }
-    user.password = req.body.newPassword;
-    await user.save();
-    res.json({ success: true, message: 'Password changed' });
-  } catch (err) { next(err); }
-});
-
-app.put('/api/auth/change-pin', protect, async (req, res, next) => {
-  try {
-    const user = await User.findById(req.user._id).select('+pin');
-    if (user.pin && !(await user.matchPin(req.body.currentPin))) {
-      return res.status(401).json({ success: false, message: 'Current PIN incorrect' });
-    }
-    if (!/^\d{4,6}$/.test(req.body.newPin)) {
-      return res.status(400).json({ success: false, message: 'PIN must be 4-6 digits' });
-    }
-    await user.setPin(req.body.newPin);
-    await user.save();
-    res.json({ success: true, message: 'PIN changed' });
-  } catch (err) { next(err); }
-});
-
-// ---------------------------------------------------------------------------
-// ROUTES: me / index (dashboard) / settings (profile)
-// ---------------------------------------------------------------------------
-
-app.get('/api/users/me', protect, (req, res) => res.json({ success: true, user: req.user }));
-
-app.put('/api/users/me', protect, async (req, res, next) => {
-  try {
-    const updates = {};
-    ['name', 'phone', 'avatar'].forEach((f) => { if (req.body[f] !== undefined) updates[f] = req.body[f]; });
-    const user = await User.findByIdAndUpdate(req.user._id, updates, { new: true });
-    res.json({ success: true, user });
-  } catch (err) { next(err); }
-});
-
+// -----------------------------------------------------------------------------
+// DASHBOARD / TEAM
+// -----------------------------------------------------------------------------
 app.get('/api/users/dashboard', protect, async (req, res, next) => {
   try {
-    const activeOrders = await Order.countDocuments({ user: req.user._id, status: 'active' });
-    const referralCount = await User.countDocuments({ referredBy: req.user._id });
+    await accrueUserOrders(req.user._id);
+    const user = await User.findById(req.user._id);
+    const activeOrders = await Order.countDocuments({ user: user._id, status: 'active' });
+    const referralCount = await User.countDocuments({ referredBy: user._id });
+    const totalOrders = await Order.countDocuments({ user: user._id });
     const data = {
-      id: req.user._id,
-      name: req.user.name,
-      email: req.user.email,
-      phone: req.user.phone,
-      walletBalance: req.user.walletBalance || 0,
-      commissionBalance: req.user.commissionBalance || 0,
-      activeOrders,
-      referralCount,
-      referralCode: req.user.referralCode || '',
-      // aliases for older frontend
-      balance: req.user.walletBalance || 0,
-      totalEarnings: req.user.commissionBalance || 0,
-      todayIncome: 0,
-      totalInvestments: activeOrders,
-      investments: activeOrders,
-      referrals: referralCount,
+      id: user._id, name: user.name, email: user.email, phone: user.phone,
+      walletBalance: user.walletBalance || 0, commissionBalance: user.commissionBalance || 0,
+      balance: user.walletBalance || 0, totalEarnings: user.commissionBalance || 0,
+      activeOrders, totalOrders, referralCount, referralCode: user.referralCode || '',
+      todayIncome: 0, totalInvestments: totalOrders, investments: activeOrders,
+      referrals: referralCount, currency: 'UGX'
     };
     res.json({ success: true, data, dashboard: data, user: data });
   } catch (err) { next(err); }
 });
-
-// ---------------------------------------------------------------------------
-// ROUTES: team
-// ---------------------------------------------------------------------------
-
 app.get('/api/team', protect, async (req, res, next) => {
   try {
-    const level1 = await User.find({ referredBy: req.user._id })
-      .select('name email phone createdAt commissionBalance walletBalance')
-      .sort('-createdAt');
-    const members = level1.map((u) => ({
-      name: u.name,
-      email: u.email,
-      phone: u.phone,
-      commission: u.commissionBalance || 0,
-      level: 'Level 1',
-      createdAt: u.createdAt,
+    const members = await User.find({ referredBy: req.user._id })
+      .select('name email phone createdAt commissionBalance')
+      .sort({ createdAt: -1 });
+    const level1 = members.map(u => ({
+      name: u.name, email: u.email, phone: u.phone,
+      commission: u.commissionBalance || 0, level: 'Level 1', createdAt: u.createdAt
     }));
-    const totalCommission = req.user.commissionBalance || 0;
-    res.json({
-      success: true,
-      team: {
-        referralCode: req.user.referralCode || '',
-        referralLink: null, // frontend builds it
-        level1Count: members.length,
-        totalMembers: members.length,
-        activeMembers: members.length,
-        totalCommission,
-        todayCommission: 0,
-        level1: members,
-        members,
-      },
-    });
+    res.json({ success: true, team: {
+      referralCode: req.user.referralCode || '', referralLink: null,
+      level1Count: level1.length, totalMembers: level1.length, activeMembers: level1.length,
+      totalCommission: req.user.commissionBalance || 0, todayCommission: 0,
+      level1, members: level1
+    }});
   } catch (err) { next(err); }
 });
 
-// ---------------------------------------------------------------------------
-// ROUTES: wallet (deposit, withdrawal)
-// ---------------------------------------------------------------------------
-
-app.post('/api/wallet/deposit', protect, async (req, res, next) => {
+// -----------------------------------------------------------------------------
+// DEPOSITS — both current frontend URL and wallet aliases
+// Frontend FormData fields: amount, network, transactionId, optional receipt.
+// -----------------------------------------------------------------------------
+async function createDeposit(req, res, next) {
   try {
+    const amount = Number(req.body.amount);
+    const network = String(req.body.network || req.body.method || '').trim();
+    const transactionId = String(req.body.transactionId || req.body.transaction_id || '').trim();
     const settings = await getSettings();
-    const { amount, method, note } = req.body;
-    if (!amount || amount < settings.minDeposit) {
-      return res.status(400).json({ success: false, message: `Minimum deposit is ${settings.minDeposit}` });
+    if (!isPositiveAmount(amount) || amount < settings.minDeposit) {
+      return res.status(400).json({ success: false, message: `Minimum deposit is UGX ${UGX(settings.minDeposit).toLocaleString('en-UG')}.` });
     }
-    const tx = await Transaction.create({ user: req.user._id, type: 'deposit', amount, method, note });
-    res.status(201).json({ success: true, transaction: tx });
-  } catch (err) { next(err); }
-});
-
-app.get('/api/wallet/deposits', protect, async (req, res, next) => {
-  try {
-    res.json({ success: true, deposits: await Transaction.find({ user: req.user._id, type: 'deposit' }).sort('-createdAt') });
-  } catch (err) { next(err); }
-});
-
-app.post('/api/wallet/withdraw', protect, async (req, res, next) => {
-  try {
-    const settings = await getSettings();
-    const { amount, method, accountDetails, pin } = req.body;
-    if (!amount || amount < settings.minWithdrawal) {
-      return res.status(400).json({ success: false, message: `Minimum withdrawal is ${settings.minWithdrawal}` });
+    if (!network || !transactionId) return res.status(400).json({ success: false, message: 'Network and transaction ID are required.' });
+    const doc = {
+      user: req.user._id, type: 'deposit', amount: UGX(amount), method: network,
+      network, transactionId, note: `Transaction ID: ${transactionId}`, status: 'pending'
+    };
+    if (req.file) {
+      doc.receiptData = req.file.buffer;
+      doc.receiptContentType = req.file.mimetype;
     }
-    const user = await User.findById(req.user._id).select('+pin');
-    if (!(await user.matchPin(pin))) return res.status(401).json({ success: false, message: 'Incorrect PIN' });
-    const fee = (amount * settings.withdrawalFeePercent) / 100;
-    if (user.walletBalance < amount + fee) return res.status(400).json({ success: false, message: 'Insufficient balance' });
-    user.walletBalance -= amount + fee;
-    await user.save();
-    const tx = await Transaction.create({ user: user._id, type: 'withdrawal', amount, fee, method, accountDetails });
-    res.status(201).json({ success: true, transaction: tx, walletBalance: user.walletBalance });
-  } catch (err) { next(err); }
-});
-
-app.get('/api/wallet/withdrawals', protect, async (req, res, next) => {
-  try {
-    res.json({ success: true, withdrawals: await Transaction.find({ user: req.user._id, type: 'withdrawal' }).sort('-createdAt') });
-  } catch (err) { next(err); }
-});
-
-// ---------------------------------------------------------------------------
-// ROUTES: order
-// ---------------------------------------------------------------------------
-
-app.post('/api/orders', protect, async (req, res, next) => {
-  try {
-    const { planName, amount, dailyReturnPercent, durationDays, pin } = req.body;
-    const user = await User.findById(req.user._id).select('+pin');
-    if (!(await user.matchPin(pin))) return res.status(401).json({ success: false, message: 'Incorrect PIN' });
-    if (user.walletBalance < amount) return res.status(400).json({ success: false, message: 'Insufficient balance' });
-    user.walletBalance -= amount;
-    await user.save();
-    const order = await Order.create({ user: user._id, planName, amount, dailyReturnPercent, durationDays });
-    await Transaction.create({ user: user._id, type: 'order', amount, status: 'completed', note: `Investment in ${planName}` });
-    res.status(201).json({ success: true, order, walletBalance: user.walletBalance });
-  } catch (err) { next(err); }
-});
-
-app.get('/api/orders', protect, async (req, res, next) => {
-  try {
-    res.json({ success: true, orders: await Order.find({ user: req.user._id }).sort('-createdAt') });
-  } catch (err) { next(err); }
-});
-
-// ---------------------------------------------------------------------------
-// ROUTES: transaction (history)
-// ---------------------------------------------------------------------------
-
-app.get('/api/transactions', protect, async (req, res, next) => {
-  try {
-    const filter = { user: req.user._id };
-    if (req.query.type) filter.type = req.query.type;
-    res.json({ success: true, transactions: await Transaction.find(filter).sort('-createdAt') });
-  } catch (err) { next(err); }
-});
-
-// ---------------------------------------------------------------------------
-// ROUTES: notification
-// ---------------------------------------------------------------------------
-
-app.get('/api/notifications', protect, async (req, res, next) => {
-  try {
-    const notes = await Notification.find({ $or: [{ user: req.user._id }, { user: null }] }).sort('-createdAt');
-    res.json({ success: true, notifications: notes });
-  } catch (err) { next(err); }
-});
-
-app.put('/api/notifications/:id/read', protect, async (req, res, next) => {
-  try {
-    const note = await Notification.findById(req.params.id);
-    if (!note) return res.status(404).json({ success: false, message: 'Not found' });
-    if (note.user) note.isRead = true;
-    else if (!note.readBy.some((id) => id.equals(req.user._id))) note.readBy.push(req.user._id);
-    await note.save();
-    res.json({ success: true });
-  } catch (err) { next(err); }
-});
-
-// ---------------------------------------------------------------------------
-// ROUTES: support
-// ---------------------------------------------------------------------------
-
-app.post('/api/support', protect, async (req, res, next) => {
-  try {
-    const ticket = await Support.create({ user: req.user._id, subject: req.body.subject, message: req.body.message });
-    res.status(201).json({ success: true, ticket });
-  } catch (err) { next(err); }
-});
-
-app.get('/api/support', protect, async (req, res, next) => {
-  try {
-    res.json({ success: true, tickets: await Support.find({ user: req.user._id }).sort('-createdAt') });
-  } catch (err) { next(err); }
-});
-
-app.post('/api/support/:id/reply', protect, async (req, res, next) => {
-  try {
-    const ticket = await Support.findById(req.params.id);
-    if (!ticket) return res.status(404).json({ success: false, message: 'Not found' });
-    if (!ticket.user.equals(req.user._id) && req.user.role !== 'admin') {
-      return res.status(403).json({ success: false, message: 'Not authorized' });
-    }
-    ticket.replies.push({ sender: req.user._id, senderRole: req.user.role, message: req.body.message });
-    await ticket.save();
-    res.json({ success: true, ticket });
-  } catch (err) { next(err); }
-});
-
-// ---------------------------------------------------------------------------
-// ROUTES: admin
-// ---------------------------------------------------------------------------
-
-app.get('/api/admin/dashboard', protect, adminOnly, async (req, res, next) => {
-  try {
-    const [totalUsers, pendingDeposits, pendingWithdrawals] = await Promise.all([
-      User.countDocuments(),
-      Transaction.countDocuments({ type: 'deposit', status: 'pending' }),
-      Transaction.countDocuments({ type: 'withdrawal', status: 'pending' }),
-    ]);
-    res.json({ success: true, stats: { totalUsers, pendingDeposits, pendingWithdrawals } });
-  } catch (err) { next(err); }
-});
-
-app.get('/api/admin/users', protect, adminOnly, async (req, res, next) => {
-  try {
-    res.json({ success: true, users: await User.find().sort('-createdAt') });
-  } catch (err) { next(err); }
-});
-
-app.put('/api/admin/users/:id/status', protect, adminOnly, async (req, res, next) => {
-  try {
-    const user = await User.findByIdAndUpdate(req.params.id, { status: req.body.status }, { new: true });
-    res.json({ success: true, user });
-  } catch (err) { next(err); }
-});
-
-app.get('/api/admin/deposits', protect, adminOnly, async (req, res, next) => {
-  try {
-    const filter = { type: 'deposit' };
-    if (req.query.status) filter.status = req.query.status;
-    res.json({ success: true, deposits: await Transaction.find(filter).populate('user', 'name email').sort('-createdAt') });
-  } catch (err) { next(err); }
-});
-
-app.put('/api/admin/deposits/:id', protect, adminOnly, async (req, res, next) => {
-  try {
-    const tx = await Transaction.findById(req.params.id);
-    if (!tx || tx.status !== 'pending') return res.status(400).json({ success: false, message: 'Not pending' });
-    if (req.body.action === 'approve') {
-      const user = await User.findById(tx.user);
-      user.walletBalance += tx.amount;
-      await user.save();
-      tx.status = 'approved';
-
-      // pay level-1 referral commission
-      const settings = await getSettings();
-      if (user.referredBy) {
-        const referrer = await User.findById(user.referredBy);
-        if (referrer) {
-          const commission = (tx.amount * settings.referralLevel1Percent) / 100;
-          referrer.walletBalance += commission;
-          referrer.commissionBalance += commission;
-          await referrer.save();
-          await Transaction.create({ user: referrer._id, type: 'commission', amount: commission, status: 'completed', note: `Referral commission from ${user.name}` });
-        }
-      }
-    } else {
-      tx.status = 'rejected';
-    }
-    await tx.save();
-    res.json({ success: true, transaction: tx });
-  } catch (err) { next(err); }
-});
-
-app.get('/api/admin/withdrawals', protect, adminOnly, async (req, res, next) => {
-  try {
-    const filter = { type: 'withdrawal' };
-    if (req.query.status) filter.status = req.query.status;
-    res.json({ success: true, withdrawals: await Transaction.find(filter).populate('user', 'name email').sort('-createdAt') });
-  } catch (err) { next(err); }
-});
-
-app.put('/api/admin/withdrawals/:id', protect, adminOnly, async (req, res, next) => {
-  try {
-    const tx = await Transaction.findById(req.params.id);
-    if (!tx || tx.status !== 'pending') return res.status(400).json({ success: false, message: 'Not pending' });
-    if (req.body.action === 'approve') {
-      tx.status = 'approved';
-    } else {
-      const user = await User.findById(tx.user);
-      user.walletBalance += tx.amount + tx.fee;
-      await user.save();
-      tx.status = 'rejected';
-    }
-    await tx.save();
-    res.json({ success: true, transaction: tx });
-  } catch (err) { next(err); }
-});
-
-app.get('/api/admin/settings', protect, adminOnly, async (req, res, next) => {
-  try {
-    res.json({ success: true, settings: await getSettings() });
-  } catch (err) { next(err); }
-});
-
-app.put('/api/admin/settings', protect, adminOnly, async (req, res, next) => {
-  try {
-    const settings = await getSettings();
-    Object.assign(settings, req.body);
-    await settings.save();
-    res.json({ success: true, settings });
-  } catch (err) { next(err); }
-});
-
-app.post('/api/admin/notifications', protect, adminOnly, async (req, res, next) => {
-  try {
-    const note = await Notification.create({ user: req.body.userId || null, title: req.body.title, message: req.body.message, type: req.body.type || 'info' });
-    res.status(201).json({ success: true, notification: note });
-  } catch (err) { next(err); }
-});
-
-
-// ---- Extra admin routes for professional admin panel ----
-app.post('/api/admin/update-balance', protect, adminOnly, async (req, res, next) => {
-  try {
-    const { phone, type, action, amount, note } = req.body;
-    if (!phone || !type || amount === undefined) {
-      return res.status(400).json({ success: false, message: 'phone, type and amount are required' });
-    }
-    const field = type === 'commission' ? 'commissionBalance' : 'walletBalance';
-    const user = await User.findOne({ phone });
-    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
-
-    const num = parseFloat(amount);
-    if (isNaN(num) || num < 0) return res.status(400).json({ success: false, message: 'Invalid amount' });
-
-    const oldValue = user[field] || 0;
-    let newValue = oldValue;
-    if (action === 'add') newValue = oldValue + num;
-    else if (action === 'subtract') newValue = Math.max(0, oldValue - num);
-    else newValue = num; // set
-
-    user[field] = newValue;
-    await user.save();
-
-    res.json({
-      success: true,
-      message: `${field} updated`,
-      data: { phone, field, oldValue, newValue, note: note || '' }
-    });
-  } catch (err) { next(err); }
-});
-
-app.post('/api/admin/update-status', protect, adminOnly, async (req, res, next) => {
-  try {
-    const { phone, status } = req.body;
-    if (!phone || !['active', 'suspended'].includes(status)) {
-      return res.status(400).json({ success: false, message: 'phone and valid status required' });
-    }
-    const user = await User.findOne({ phone });
-    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
-    if (user.role === 'admin') return res.status(403).json({ success: false, message: 'Cannot change admin status' });
-    user.status = status;
-    await user.save();
-    res.json({ success: true, message: `Account ${status}`, user });
-  } catch (err) { next(err); }
-});
-
-app.get('/api/admin/orders', protect, adminOnly, async (req, res, next) => {
-  try {
-    const orders = await Order.find().populate('user', 'name phone email').sort('-createdAt').limit(200);
-    res.json({ success: true, orders });
-  } catch (err) { next(err); }
-});
-
-app.get('/api/admin/transactions', protect, adminOnly, async (req, res, next) => {
-  try {
-    const filter = {};
-    if (req.query.status) filter.status = req.query.status;
-    if (req.query.type) filter.type = req.query.type;
-    const transactions = await Transaction.find(filter)
-      .populate('user', 'name phone email')
-      .sort('-createdAt')
-      .limit(300);
-    res.json({ success: true, transactions });
-  } catch (err) { next(err); }
-});
-
-app.post('/api/admin/transaction/approve', protect, adminOnly, async (req, res, next) => {
-  try {
-    const tx = await Transaction.findById(req.body.id);
-    if (!tx || tx.status !== 'pending') {
-      return res.status(400).json({ success: false, message: 'Transaction not pending' });
-    }
-    const user = await User.findById(tx.user);
-    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
-
-    if (tx.type === 'deposit') {
-      user.walletBalance += tx.amount;
-      await user.save();
-      // referral commission
-      const settings = await getSettings();
-      if (user.referredBy) {
-        const referrer = await User.findById(user.referredBy);
-        if (referrer) {
-          const commission = (tx.amount * (settings.referralLevel1Percent || 10)) / 100;
-          referrer.walletBalance += commission;
-          referrer.commissionBalance += commission;
-          await referrer.save();
-        }
-      }
-    } else if (tx.type === 'withdrawal') {
-      if (user.walletBalance < tx.amount) {
-        return res.status(400).json({ success: false, message: 'Insufficient balance' });
-      }
-      user.walletBalance -= tx.amount;
-      await user.save();
-    }
-    tx.status = 'approved';
-    await tx.save();
-    res.json({ success: true, message: 'Transaction approved' });
-  } catch (err) { next(err); }
-});
-
-app.post('/api/admin/transaction/reject', protect, adminOnly, async (req, res, next) => {
-  try {
-    const tx = await Transaction.findById(req.body.id);
-    if (!tx || tx.status !== 'pending') {
-      return res.status(400).json({ success: false, message: 'Transaction not pending' });
-    }
-    tx.status = 'rejected';
-    if (req.body.note) tx.note = req.body.note;
-    await tx.save();
-    res.json({ success: true, message: 'Transaction rejected' });
-  } catch (err) { next(err); }
-});
-
-app.post('/api/admin/reset-user', protect, adminOnly, async (req, res, next) => {
-  try {
-    const { phone } = req.body;
-    const user = await User.findOne({ phone });
-    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
-    user.walletBalance = 0;
-    user.commissionBalance = 0;
-    await user.save();
-    res.json({ success: true, message: 'User balances reset to 0' });
-  } catch (err) { next(err); }
-});
-
-
-// One-time helper: promote a user to admin by referral code (call once, then
-// remove or protect this route). Convenient when you have no local shell.
-app.post('/api/admin/bootstrap', async (req, res, next) => {
-  try {
-    const { email, secret } = req.body;
-    if (secret !== process.env.JWT_SECRET) return res.status(403).json({ success: false, message: 'Not authorized' });
-    const user = await User.findOneAndUpdate({ email }, { role: 'admin' }, { new: true });
-    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
-    res.json({ success: true, message: `${email} is now an admin` });
-  } catch (err) { next(err); }
-});
-
-// ---------------------------------------------------------------------------
-// ERROR HANDLING + STARTUP
-// ---------------------------------------------------------------------------
-
-app.use((req, res) => res.status(404).json({ success: false, message: `Route not found: ${req.originalUrl}` }));
-
-app.use((err, req, res, next) => {
-  console.error(err);
-  let status = 500, message = err.message || 'Server error';
-  if (err.code === 11000) { status = 400; message = 'Duplicate value - email or phone already in use'; }
-  if (err.name === 'ValidationError') { status = 400; message = Object.values(err.errors).map((e) => e.message).join(', '); }
-  res.status(status).json({ success: false, message });
-});
-
-mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => {
-    console.log('MongoDB connected');
-    const PORT = process.env.PORT || 5000;
-    app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-  })
-  .catch((err) => {
-    console.error('MongoDB connection error:', err.message);
-    process.exit(1);
-  });
+    const deposit = await Transaction.create(doc);
+    await notify(req.user._id, 'Deposit submitted', `Your UGX ${UGX(amount).toLocaleString('en-UG')} deposit is awaiting review.`, 'info');
+    res.status(201).j
