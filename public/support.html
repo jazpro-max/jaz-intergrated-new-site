@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0">
+
+<title>Support Center</title>
+
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+<style>
+
+*{
+
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Segoe UI,sans-serif;
+
+}
+
+body{
+
+background:#0b0f19;
+color:white;
+padding-bottom:90px;
+
+}
+
+header{
+
+background:#111827;
+padding:18px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+position:sticky;
+top:0;
+border-bottom:1px solid #222;
+z-index:100;
+
+}
+
+header h2{
+
+color:#f59e0b;
+
+}
+
+.container{
+
+max-width:900px;
+margin:auto;
+padding:16px;
+
+}
+
+.status{
+
+background:#161d2d;
+padding:18px;
+border-radius:15px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+margin-bottom:20px;
+
+}
+
+.online{
+
+color:#10b981;
+font-weight:bold;
+
+}
+
+.section{
+
+margin-bottom:20px;
+
+}
+
+.section-title{
+
+font-size:18px;
+font-weight:bold;
+margin-bottom:12px;
+color:#f59e0b;
+
+}
+
+.card{
+
+background:#161d2d;
+border-radius:15px;
+overflow:hidden;
+
+}
+
+.item{
+
+display:flex;
+justify-content:space-between;
+align-items:center;
+padding:18px;
+border-bottom:1px solid #232d45;
+text-decoration:none;
+color:white;
+
+}
+
+.item:last-child{
+
+border-bottom:none;
+
+}
+
+.left{
+
+display:flex;
+align-items:center;
+gap:15px;
+
+}
+
+.left i{
+
+width:22px;
+color:#f59e0b;
+
+}
+
+button{
+
+width:100%;
+padding:15px;
+background:#f59e0b;
+border:none;
+border-radius:12px;
+font-size:16px;
+font-weight:bold;
+cursor:pointer;
+
+}
+
+.bottom-nav{
+
+position:fixed;
+bottom:0;
+left:0;
+width:100%;
+background:#111827;
+display:flex;
+justify-content:space-around;
+padding:12px 0;
+
+}
+
+.bottom-nav a{
+
+display:flex;
+flex-direction:column;
+align-items:center;
+text-decoration:none;
+color:#9ca3af;
+font-size:13px;
+
+}
+
+.bottom-nav a.active{
+
+color:#f59e0b;
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<header>
+
+<h2>Support Center</h2>
+
+<i class="fa-solid fa-headset fa-lg"></i>
+
+</header>
+
+<div class="container">
+
+<div class="status">
+
+<div>
+
+<h3>Customer Support</h3>
+
+<p>Average response time: 5 minutes</p>
+
+</div>
+
+<div class="online">
+
+● Online
+
+</div>
+
+</div>
+<!-- Quick Contact -->
+
+<div class="section">
+
+<div class="section-title">
+
+Quick Contact
+
+</div>
+
+<div class="card">
+
+<a href="https://wa.me/256700000000" class="item" target="_blank">
+
+<div class="left">
+
+<i class="fa-brands fa-whatsapp"></i>
+
+<span>WhatsApp Support</span>
+
+</div>
+
+<i class="fa-solid fa-angle-right"></i>
+
+</a>
+
+<a href="tel:+256700000000" class="item">
+
+<div class="left">
+
+<i class="fa-solid fa-phone"></i>
+
+<span>Call Support</span>
+
+</div>
+
+<i class="fa-solid fa-angle-right"></i>
+
+</a>
+
+<a href="mailto:support@jaztech.com" class="item">
+
+<div class="left">
+
+<i class="fa-solid fa-envelope"></i>
+
+<span>Email Support</span>
+
+</div>
+
+<i class="fa-solid fa-angle-right"></i>
+
+</a>
+
+<a href="livechat.html" class="item">
+
+<div class="left">
+
+<i class="fa-solid fa-comments"></i>
+
+<span>Live Chat</span>
+
+</div>
+
+<i class="fa-solid fa-angle-right"></i>
+
+</a>
+
+</div>
+
+</div>
+
+<!-- Support Ticket -->
+
+<div class="section">
+
+<div class="section-title">
+
+Create Support Ticket
+
+</div>
+
+<div class="card" style="padding:20px;">
+
+<form id="ticketForm">
+
+<label>Subject</label>
+
+<input
+type="text"
+id="subject"
+placeholder="Enter ticket subject"
+required
+style="width:100%;padding:12px;margin-top:8px;margin-bottom:15px;background:#20293d;color:white;border:none;border-radius:10px;">
+
+<label>Category</label>
+
+<select
+id="category"
+style="width:100%;padding:12px;margin-top:8px;margin-bottom:15px;background:#20293d;color:white;border:none;border-radius:10px;">
+
+<option>Deposit</option>
+
+<option>Withdrawal</option>
+
+<option>Investment</option>
+
+<option>Referral</option>
+
+<option>Account</option>
+
+<option>Technical Problem</option>
+
+<option>Other</option>
+
+</select>
+
+<label>Description</label>
+
+<textarea
+id="message"
+rows="5"
+placeholder="Describe your issue..."
+style="width:100%;padding:12px;margin-top:8px;margin-bottom:15px;background:#20293d;color:white;border:none;border-radius:10px;"></textarea>
+
+<label>Attach Screenshot (Optional)</label>
+
+<input
+type="file"
+id="attachment"
+accept="image/*,.pdf"
+style="margin-top:10px;margin-bottom:20px;">
+
+<button type="submit">
+
+<i class="fa-solid fa-paper-plane"></i>
+
+Submit Ticket
+
+</button>
+
+</form>
+
+</div>
+
+</div>
+
+<!-- Frequently Asked Questions -->
+
+<div class="section">
+
+<div class="section-title">
+
+Frequently Asked Questions
+
+</div>
+
+<div class="card">
+
+<div class="item">
+
+<div class="left">
+
+<i class="fa-solid fa-circle-question"></i>
+
+<span>How long do deposits take?</span>
+
+</div>
+
+</div>
+
+<div class="item">
+
+<div class="left">
+
+<i class="fa-solid fa-circle-question"></i>
+
+<span>How long do withdrawals take?</span>
+
+</div>
+
+</div>
+
+<div class="item">
+
+<div class="left">
+
+<i class="fa-solid fa-circle-question"></i>
+
+<span>How do referrals work?</span>
+
+</div>
+
+</div>
+
+<div class="item">
+
+<div class="left">
+
+<i class="fa-solid fa-circle-question"></i>
+
+<span>How can I reset my password?</span>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+<!-- My Tickets -->
+
+<div class="section">
+
+<div class="section-title">
+
+My Support Tickets
+
+</div>
+
+<div id="ticketHistory">
+
+<div class="card">
+
+<div class="item">
+
+<div class="left">
+
+<i class="fa-solid fa-ticket"></i>
+
+<span>No support tickets yet.</span>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+<!-- Bottom Navigation -->
+
+<nav class="bottom-nav">
+
+<a href="index.html">
+
+<i class="fa-solid fa-house"></i>
+
+<span>Home</span>
+
+</a>
+
+<a href="order.html">
+
+<i class="fa-solid fa-chart-line"></i>
+
+<span>Orders</span>
+
+</a>
+
+<a href="team.html">
+
+<i class="fa-solid fa-users"></i>
+
+<span>Team</span>
+
+</a>
+
+<a href="me.html" class="active">
+
+<i class="fa-solid fa-user"></i>
+
+<span>Me</span>
+
+</a>
+<script>
+
+async function loadTickets(){
+
+try{
+
+const response=await fetch("/api/support/tickets");
+
+const tickets=await response.json();
+
+const history=document.getElementById("ticketHistory");
+
+history.innerHTML="";
+
+if(!Array.isArray(tickets) || tickets.length===0){
+
+history.innerHTML=`
+
+<div class="card">
+
+<div class="item">
+
+<div class="left">
+
+<i class="fa-solid fa-ticket"></i>
+
+<span>No support tickets found.</span>
+
+</div>
+
+</div>
+
+</div>
+
+`;
+
+return;
+
+}
+
+tickets.forEach(ticket=>{
+
+let color="#f59e0b";
+
+if(ticket.status==="Resolved") color="#10b981";
+
+if(ticket.status==="Closed") color="#6b7280";
+
+if(ticket.status==="In Progress") color="#3b82f6";
+
+history.innerHTML+=`
+
+<div class="card" style="margin-bottom:15px;">
+
+<div class="item">
+
+<div class="left">
+
+<i class="fa-solid fa-ticket"></i>
+
+<div>
+
+<strong>${ticket.subject}</strong>
+
+<br>
+
+<small>${ticket.category}</small>
+
+<br>
+
+<small>${ticket.created_at}</small>
+
+</div>
+
+</div>
+
+</div>
+
+<div style="padding:15px;">
+
+<p>${ticket.message}</p>
+
+<br>
+
+<strong style="color:${color};">
+
+Status: ${ticket.status}
+
+</strong>
+
+</div>
+
+</div>
+
+`;
+
+});
+
+}catch(error){
+
+console.error(error);
+
+}
+
+}
+
+document.getElementById("ticketForm")
+
+.addEventListener("submit",
+
+async function(e){
+
+e.preventDefault();
+
+const formData=new FormData();
+
+formData.append(
+
+"subject",
+
+document.getElementById("subject").value
+
+);
+
+formData.append(
+
+"category",
+
+document.getElementById("category").value
+
+);
+
+formData.append(
+
+"message",
+
+document.getElementById("message").value
+
+);
+
+const file=
+
+document.getElementById("attachment")
+
+.files[0];
+
+if(file){
+
+formData.append("attachment",file);
+
+}
+
+try{
+
+const response=await fetch(
+
+"/api/support/tickets",
+
+{
+
+method:"POST",
+
+body:formData
+
+}
+
+);
+
+const result=await response.json();
+
+if(response.ok){
+
+alert(result.message ||
+
+"Support ticket submitted successfully.");
+
+document.getElementById("ticketForm").reset();
+
+loadTickets();
+
+}else{
+
+alert(result.message ||
+
+"Unable to submit ticket.");
+
+}
+
+}catch(error){
+
+console.error(error);
+
+alert("Server connection failed.");
+
+}
+
+});
+
+loadTickets();
+
+</script>
+
+</body>
+
+</html>
+</nav>

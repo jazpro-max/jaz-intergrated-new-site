@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0">
+
+<title>Settings</title>
+
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Segoe UI,sans-serif;
+}
+
+body{
+background:#0b0f19;
+color:white;
+padding-bottom:90px;
+}
+
+header{
+
+background:#111827;
+padding:18px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+position:sticky;
+top:0;
+border-bottom:1px solid #1f2937;
+z-index:100;
+
+}
+
+header h2{
+
+color:#f59e0b;
+
+}
+
+.container{
+
+max-width:800px;
+margin:auto;
+padding:16px;
+
+}
+
+.section{
+
+margin-bottom:20px;
+
+}
+
+.section-title{
+
+font-size:18px;
+font-weight:bold;
+color:#f59e0b;
+margin-bottom:12px;
+
+}
+
+.card{
+
+background:#161d2d;
+border-radius:15px;
+overflow:hidden;
+
+}
+
+.item{
+
+display:flex;
+justify-content:space-between;
+align-items:center;
+padding:18px;
+border-bottom:1px solid #232d45;
+text-decoration:none;
+color:white;
+
+}
+
+.item:last-child{
+
+border-bottom:none;
+
+}
+
+.left{
+
+display:flex;
+align-items:center;
+gap:15px;
+
+}
+
+.left i{
+
+width:22px;
+color:#f59e0b;
+
+}
+
+.right{
+
+color:#9ca3af;
+
+}
+
+.switch{
+
+position:relative;
+display:inline-block;
+width:50px;
+height:24px;
+
+}
+
+.switch input{
+
+display:none;
+
+}
+
+.slider{
+
+position:absolute;
+cursor:pointer;
+top:0;
+left:0;
+right:0;
+bottom:0;
+background:#555;
+border-radius:24px;
+transition:.3s;
+
+}
+
+.slider:before{
+
+position:absolute;
+content:"";
+height:18px;
+width:18px;
+left:3px;
+bottom:3px;
+background:white;
+border-radius:50%;
+transition:.3s;
+
+}
+
+input:checked + .slider{
+
+background:#10b981;
+
+}
+
+input:checked + .slider:before{
+
+transform:translateX(26px);
+
+}
+
+.bottom-nav{
+
+position:fixed;
+bottom:0;
+left:0;
+width:100%;
+background:#111827;
+display:flex;
+justify-content:space-around;
+padding:12px 0;
+
+}
+
+.bottom-nav a{
+
+display:flex;
+flex-direction:column;
+align-items:center;
+text-decoration:none;
+color:#9ca3af;
+font-size:13px;
+
+}
+
+.bottom-nav a.active{
+
+color:#f59e0b;
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<header>
+
+<h2>Settings</h2>
+
+<i class="fa-solid fa-gear fa-lg"></i>
+
+</header>
+
+<div class="container">
+<!-- ================= ACCOUNT ================= -->
+
+<div class="section">
+
+<div class="section-title">
+
+Account
+
+</div>
+
+<div class="card">
+
+<a href="edit-profile.html" class="item">
+
+<div class="left">
+
+<i class="fa-solid fa-user"></i>
+
+<span>Edit Profile</span>
+
+</div>
+
+<i class="fa-solid fa-angle-right right"></i>
+
+</a>
+
+<a href="change-password.html" class="item">
+
+<div class="left">
+
+<i class="fa-solid fa-lock"></i>
+
+<span>Change Password</span>
+
+</div>
+
+<i class="fa-solid fa-angle-right right"></i>
+
+</a>
+
+<a href="change-pin.html" class="item">
+
+<div class="left">
+
+<i class="fa-solid fa-key"></i>
+
+<span>Change Transaction PIN</span>
+
+</div>
+
+<i class="fa-solid fa-angle-right right"></i>
+
+</a>
+
+</div>
+
+</div>
+
+<!-- ================= SECURITY ================= -->
+
+<div class="section">
+
+<div class="section-title">
+
+Security
+
+</div>
+
+<div class="card">
+
+<div class="item">
+
+<div class="left">
+
+<i class="fa-solid fa-shield-halved"></i>
+
+<span>Two-Factor Authentication</span>
+
+</div>
+
+<label class="switch">
+
+<input type="checkbox" id="twoFactor">
+
+<span class="slider"></span>
+
+</label>
+
+</div>
+
+<a href="login-sessions.html" class="item">
+
+<div class="left">
+
+<i class="fa-solid fa-laptop"></i>
+
+<span>Active Login Sessions</span>
+
+</div>
+
+<i class="fa-solid fa-angle-right right"></i>
+
+</a>
+
+</div>
+
+</div>
+
+<!-- ================= NOTIFICATIONS ================= -->
+
+<div class="section">
+
+<div class="section-title">
+
+Notifications
+
+</div>
+
+<div class="card">
+
+<div class="item">
+
+<div class="left">
+
+<i class="fa-solid fa-money-bill-wave"></i>
+
+<span>Deposit Alerts</span>
+
+</div>
+
+<label class="switch">
+
+<input type="checkbox" id="depositAlert" checked>
+
+<span class="slider"></span>
+
+</label>
+
+</div>
+
+<div class="item">
+
+<div class="left">
+
+<i class="fa-solid fa-money-check-dollar"></i>
+
+<span>Withdrawal Alerts</span>
+
+</div>
+
+<label class="switch">
+
+<input type="checkbox" id="withdrawAlert" checked>
+
+<span class="slider"></span>
+
+</label>
+
+</div>
+
+<div class="item">
+
+<div class="left">
+
+<i class="fa-solid fa-chart-line"></i>
+
+<span>Profit Notifications</span>
+
+</div>
+
+<label class="switch">
+
+<input type="checkbox" id="profitAlert" checked>
+
+<span class="slider"></span>
+
+</label>
+
+</div>
+
+<div class="item">
+
+<div class="left">
+
+<i class="fa-solid fa-users"></i>
+
+<span>Referral Notifications</span>
+
+</div>
+
+<label class="switch">
+
+<input type="checkbox" id="referralAlert" checked>
+
+<span class="slider"></span>
+
+</label>
+
+</div>
+
+</div>
+
+</div>
+
+<!-- ================= APP SETTINGS ================= -->
+
+<div class="section">
+
+<div class="section-title">
+
+Preferences
+
+</div>
+
+<div class="card">
+
+<div class="item">
+
+<div class="left">
+
+<i class="fa-solid fa-moon"></i>
+
+<span>Dark Mode</span>
+
+</div>
+
+<label class="switch">
+
+<input type="checkbox" id="darkMode" checked>
+
+<span class="slider"></span>
+
+</label>
+
+</div>
+
+<div class="item">
+
+<div class="left">
+
+<i class="fa-solid fa-language"></i>
+
+<span>Language</span>
+
+</div>
+
+<select id="language">
+
+<option value="en">English</option>
+
+<option value="sw">Swahili</option>
+
+<option value="fr">French</option>
+
+</select>
+
+</div>
+
+</div>
+
+</div>
+
+<!-- ================= ABOUT ================= -->
+
+<div class="section">
+
+<div class="section-title">
+
+About
+
+</div>
+
+<div class="card">
+
+<a href="privacy.html" class="item">
+
+<div class="left">
+
+<i class="fa-solid fa-user-shield"></i>
+
+<span>Privacy Policy</span>
+
+</div>
+
+<i class="fa-solid fa-angle-right right"></i>
+
+</a>
+
+<a href="terms.html" class="item">
+
+<div class="left">
+
+<i class="fa-solid fa-file-contract"></i>
+
+<span>Terms & Conditions</span>
+
+</div>
+
+<i class="fa-solid fa-angle-right right"></i>
+
+</a>
+
+<div class="item">
+
+<div class="left">
+
+<i class="fa-solid fa-code"></i>
+
+<span>Version</span>
+
+</div>
+
+<span class="right">v1.0.0</span>
+
+</div>
+
+</div>
+
+</div>
+
+<!-- ================= LOGOUT ================= -->
+
+<div class="section">
+
+<button id="logoutBtn"
+style="width:100%;padding:15px;background:#dc2626;color:white;border:none;border-radius:12px;font-size:16px;font-weight:bold;cursor:pointer;">
+
+<i class="fa-solid fa-right-from-bracket"></i>
+
+Logout
+
+</button>
+
+</div>
+
+</div>
+
+<!-- Bottom Navigation -->
+
+<nav class="bottom-nav">
+
+<a href="index.html">
+
+<i class="fa-solid fa-house"></i>
+
+<span>Home</span>
+
+</a>
+
+<a href="order.html">
+
+<i class="fa-solid fa-chart-line"></i>
+
+<span>Orders</span>
+
+</a>
+
+<a href="team.html">
+
+<i class="fa-solid fa-users"></i>
+
+<span>Team</span>
+
+</a>
+
+<a href="me.html" class="active">
+
+<i class="fa-solid fa-user"></i>
+
+<span>Me</span>
+
+</a>
+
+</nav>
+<script>
+
+async function loadSettings(){
+
+try{
+
+const response=await fetch("/api/settings");
+
+const settings=await response.json();
+
+document.getElementById("twoFactor").checked=settings.twoFactor;
+
+document.getElementById("depositAlert").checked=settings.depositAlert;
+
+document.getElementById("withdrawAlert").checked=settings.withdrawAlert;
+
+document.getElementById("profitAlert").checked=settings.profitAlert;
+
+document.getElementById("referralAlert").checked=settings.referralAlert;
+
+document.getElementById("darkMode").checked=settings.darkMode;
+
+document.getElementById("language").value=settings.language;
+
+}catch(error){
+
+console.log(error);
+
+}
+
+}
+
+async function saveSettings(){
+
+const settings={
+
+twoFactor:
+document.getElementById("twoFactor").checked,
+
+depositAlert:
+document.getElementById("depositAlert").checked,
+
+withdrawAlert:
+document.getElementById("withdrawAlert").checked,
+
+profitAlert:
+document.getElementById("profitAlert").checked,
+
+referralAlert:
+document.getElementById("referralAlert").checked,
+
+darkMode:
+document.getElementById("darkMode").checked,
+
+language:
+document.getElementById("language").value
+
+};
+
+try{
+
+const response=await fetch("/api/settings",{
+
+method:"PUT",
+
+headers:{
+
+"Content-Type":"application/json"
+
+},
+
+body:JSON.stringify(settings)
+
+});
+
+const result=await response.json();
+
+alert(result.message || "Settings saved successfully.");
+
+}catch(error){
+
+alert("Unable to save settings.");
+
+}
+
+}
+
+document.querySelectorAll("input[type='checkbox']").forEach(item=>{
+
+item.addEventListener("change",saveSettings);
+
+});
+
+document.getElementById("language")
+
+.addEventListener("change",saveSettings);
+
+document.getElementById("darkMode")
+
+.addEventListener("change",function(){
+
+if(this.checked){
+
+document.body.style.background="#0b0f19";
+
+}else{
+
+document.body.style.background="#f5f5f5";
+
+document.body.style.color="#000";
+
+}
+
+saveSettings();
+
+});
+
+document.getElementById("logoutBtn")
+
+.addEventListener("click",logout);
+
+async function logout(){
+
+const ok=confirm("Logout of your account?");
+
+if(!ok) return;
+
+try{
+
+await fetch("/api/logout",{
+
+method:"POST"
+
+});
+
+localStorage.clear();
+
+sessionStorage.clear();
+
+window.location.href="login.html";
+
+}catch(error){
+
+alert("Logout failed.");
+
+}
+
+}
+
+loadSettings();
+
+</script>
+
+</body>
+
+</html>

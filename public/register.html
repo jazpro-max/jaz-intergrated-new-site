@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+content="width=device-width,initial-scale=1.0">
+
+<title>Create Account</title>
+
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Segoe UI,sans-serif;
+}
+
+body{
+
+background:#0b0f19;
+display:flex;
+justify-content:center;
+align-items:center;
+min-height:100vh;
+padding:20px;
+
+}
+
+.register-box{
+
+width:100%;
+max-width:450px;
+background:#161d2d;
+padding:35px;
+border-radius:20px;
+box-shadow:0 10px 30px rgba(0,0,0,.35);
+
+}
+
+.logo{
+
+text-align:center;
+margin-bottom:25px;
+
+}
+
+.logo i{
+
+font-size:60px;
+color:#f59e0b;
+
+}
+
+.logo h2{
+
+margin-top:15px;
+color:white;
+
+}
+
+.logo p{
+
+color:#9ca3af;
+
+}
+
+.input-group{
+
+margin-bottom:16px;
+
+}
+
+.input-group label{
+
+display:block;
+margin-bottom:6px;
+color:#d1d5db;
+
+}
+
+.input-group input{
+
+width:100%;
+padding:14px;
+background:#20293d;
+border:none;
+border-radius:10px;
+color:white;
+font-size:15px;
+
+}
+
+.password-box{
+
+position:relative;
+
+}
+
+.password-box i{
+
+position:absolute;
+right:15px;
+top:16px;
+cursor:pointer;
+color:#9ca3af;
+
+}
+
+.terms{
+
+display:flex;
+align-items:flex-start;
+gap:10px;
+margin:15px 0;
+font-size:14px;
+color:#d1d5db;
+
+}
+
+.terms a{
+
+color:#f59e0b;
+text-decoration:none;
+
+}
+
+button{
+
+width:100%;
+padding:15px;
+background:#f59e0b;
+border:none;
+border-radius:12px;
+font-size:16px;
+font-weight:bold;
+cursor:pointer;
+
+}
+
+button:hover{
+
+background:#ffb300;
+
+}
+
+.loading{
+
+display:none;
+margin-top:15px;
+text-align:center;
+color:#f59e0b;
+
+}
+
+.login{
+
+text-align:center;
+margin-top:20px;
+color:#9ca3af;
+
+}
+
+.login a{
+
+color:#f59e0b;
+font-weight:bold;
+text-decoration:none;
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="register-box">
+
+<div class="logo">
+
+<i class="fa-solid fa-user-plus"></i>
+
+<h2>Create Account</h2>
+
+<p>Join JazTech Investment</p>
+
+</div>
+
+<form id="registerForm">
+
+<div class="input-group">
+
+<label>Full Name</label>
+
+<input
+type="text"
+id="name"
+placeholder="Enter your full name"
+required>
+
+</div>
+
+<div class="input-group">
+
+<label>Email Address</label>
+
+<input
+type="email"
+id="email"
+placeholder="Enter your email"
+required>
+
+</div>
+
+<div class="input-group">
+
+<label>Phone Number</label>
+
+<input
+type="tel"
+id="phone"
+placeholder="Enter phone number"
+required>
+
+</div>
+
+<div class="input-group">
+
+<label>Password</label>
+
+<div class="password-box">
+
+<input
+type="password"
+id="password"
+placeholder="Create password"
+required>
+
+<i class="fa-solid fa-eye"
+id="togglePassword"></i>
+
+</div>
+
+</div>
+
+<div class="input-group">
+
+<label>Confirm Password</label>
+
+<div class="password-box">
+
+<input
+type="password"
+id="confirmPassword"
+placeholder="Confirm password"
+required>
+
+<i class="fa-solid fa-eye"
+id="toggleConfirmPassword"></i>
+
+</div>
+
+</div>
+
+<div class="input-group">
+
+<label>Referral Code (Optional)</label>
+
+<input
+type="text"
+id="referralCode"
+placeholder="Enter referral code">
+
+</div>
+
+<div class="terms">
+
+<input
+type="checkbox"
+id="terms"
+required>
+
+<label for="terms">
+
+I agree to the
+
+<a href="terms.html">
+
+Terms & Conditions
+
+</a>
+
+</label>
+
+</div>
+
+<button type="submit">
+
+Create Account
+
+</button>
+
+<div
+class="loading"
+id="loading">
+
+Creating your account...
+
+</div>
+
+<div class="login">
+
+Already have an account?
+
+<a href="login.html">
+
+Login
+
+</a>
+
+</div>
+
+</form>
+
+</div>
+<script>
+
+const password =
+document.getElementById("password");
+
+const confirmPassword =
+document.getElementById("confirmPassword");
+
+document.getElementById("togglePassword")
+.addEventListener("click",function(){
+
+password.type =
+password.type==="password" ? "text":"password";
+
+this.classList.toggle("fa-eye");
+this.classList.toggle("fa-eye-slash");
+
+});
+
+document.getElementById("toggleConfirmPassword")
+.addEventListener("click",function(){
+
+confirmPassword.type =
+confirmPassword.type==="password" ? "text":"password";
+
+this.classList.toggle("fa-eye");
+this.classList.toggle("fa-eye-slash");
+
+});
+
+document.getElementById("registerForm")
+.addEventListener("submit",registerUser);
+
+async function registerUser(e){
+
+e.preventDefault();
+
+if(password.value!==confirmPassword.value){
+
+alert("Passwords do not match.");
+
+return;
+
+}
+
+if(password.value.length<8){
+
+alert("Password must be at least 8 characters.");
+
+return;
+
+}
+
+if(!document.getElementById("terms").checked){
+
+alert("Please accept the Terms & Conditions.");
+
+return;
+
+}
+
+document.getElementById("loading").style.display="block";
+
+const user={
+
+name:
+document.getElementById("name").value.trim(),
+
+email:
+document.getElementById("email").value.trim(),
+
+phone:
+document.getElementById("phone").value.trim(),
+
+password:
+password.value,
+
+referralCode:
+document.getElementById("referralCode").value.trim()
+
+};
+
+try{
+
+const response=await fetch("/api/register",{
+
+method:"POST",
+
+headers:{
+
+"Content-Type":"application/json"
+
+},
+
+body:JSON.stringify(user)
+
+});
+
+const result=await response.json();
+
+document.getElementById("loading").style.display="none";
+
+if(response.ok){
+
+if(result.token){
+
+localStorage.setItem("token",result.token);
+
+}
+
+if(result.user){
+
+localStorage.setItem(
+"user",
+JSON.stringify(result.user)
+);
+
+}
+
+alert("Registration successful!");
+
+window.location.href="index.html";
+
+}else{
+
+alert(result.message || "Registration failed.");
+
+}
+
+}catch(error){
+
+document.getElementById("loading").style.display="none";
+
+console.error(error);
+
+alert("Unable to connect to the server.");
+
+}
+
+}
+
+window.addEventListener("load",()=>{
+
+const token=
+localStorage.getItem("token") ||
+sessionStorage.getItem("token");
+
+if(token){
+
+window.location.href="index.html";
+
+}
+
+});
+
+</script>
+
+</body>
+
+</html>

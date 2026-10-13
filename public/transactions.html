@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0">
+
+<title>Transaction History</title>
+
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Segoe UI,sans-serif;
+}
+
+body{
+background:#0b0f19;
+color:white;
+padding-bottom:90px;
+}
+
+header{
+
+background:#111827;
+padding:18px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+position:sticky;
+top:0;
+border-bottom:1px solid #222;
+z-index:100;
+
+}
+
+header h2{
+
+color:#f59e0b;
+
+}
+
+.container{
+
+max-width:800px;
+margin:auto;
+padding:16px;
+
+}
+
+.summary{
+
+display:grid;
+grid-template-columns:repeat(2,1fr);
+gap:15px;
+margin-bottom:18px;
+
+}
+
+.card{
+
+background:#161d2d;
+padding:18px;
+border-radius:16px;
+
+}
+
+.card p{
+
+color:#9ca3af;
+
+}
+
+.card h2{
+
+margin-top:8px;
+color:#f59e0b;
+
+}
+
+.filter{
+
+display:flex;
+gap:10px;
+margin-bottom:18px;
+
+}
+
+.filter input{
+
+flex:1;
+padding:12px;
+border-radius:10px;
+border:none;
+background:#20293d;
+color:white;
+
+}
+
+.filter select{
+
+padding:12px;
+border:none;
+border-radius:10px;
+background:#20293d;
+color:white;
+
+}
+
+.transaction{
+
+background:#161d2d;
+padding:18px;
+border-radius:15px;
+margin-bottom:15px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+
+}
+
+.left h3{
+
+margin-bottom:5px;
+
+}
+
+.left p{
+
+color:#9ca3af;
+font-size:14px;
+
+}
+
+.amount{
+
+font-size:18px;
+font-weight:bold;
+
+}
+
+.credit{
+
+color:#10b981;
+
+}
+
+.debit{
+
+color:#ef4444;
+
+}
+
+.status{
+
+margin-top:6px;
+font-size:12px;
+padding:4px 10px;
+border-radius:20px;
+display:inline-block;
+
+}
+
+.completed{
+
+background:#10b981;
+
+}
+
+.pending{
+
+background:#f59e0b;
+color:black;
+
+}
+
+.failed{
+
+background:#ef4444;
+
+}
+
+.bottom-nav{
+
+position:fixed;
+bottom:0;
+left:0;
+width:100%;
+background:#111827;
+display:flex;
+justify-content:space-around;
+padding:12px 0;
+
+}
+
+.bottom-nav a{
+
+display:flex;
+flex-direction:column;
+align-items:center;
+text-decoration:none;
+color:#9ca3af;
+font-size:13px;
+
+}
+
+.bottom-nav a.active{
+
+color:#f59e0b;
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<header>
+
+<h2>Transactions</h2>
+
+<i class="fa-solid fa-clock-rotate-left fa-lg"></i>
+
+</header>
+
+<div class="container">
+
+<div class="summary">
+
+<div class="card">
+
+<p>Total Credits</p>
+
+<h2 id="credits">
+
+UGX 0
+
+</h2>
+
+</div>
+
+<div class="card">
+
+<p>Total Debits</p>
+
+<h2 id="debits">
+
+UGX 0
+
+</h2>
+
+</div>
+
+</div>
+
+<div class="filter">
+
+<input
+type="text"
+id="search"
+placeholder="Search transaction">
+
+<select id="filter">
+
+<option value="All">
+
+All
+
+</option>
+
+<option value="Deposit">
+
+Deposit
+
+</option>
+
+<option value="Withdrawal">
+
+Withdrawal
+
+</option>
+
+<option value="Investment">
+
+Investment
+
+</option>
+
+<option value="Commission">
+
+Commission
+
+</option>
+
+<option value="Profit">
+
+Profit
+
+</option>
+
+</select>
+
+</div>
+
+<div id="transactionList">
+
+</div>
+
+</div>
+<!-- Bottom Navigation -->
+
+<nav class="bottom-nav">
+
+<a href="index.html">
+
+<i class="fa-solid fa-house"></i>
+
+<span>Home</span>
+
+</a>
+
+<a href="order.html">
+
+<i class="fa-solid fa-chart-line"></i>
+
+<span>Orders</span>
+
+</a>
+
+<a href="team.html">
+
+<i class="fa-solid fa-users"></i>
+
+<span>Team</span>
+
+</a>
+
+<a href="me.html" class="active">
+
+<i class="fa-solid fa-user"></i>
+
+<span>Me</span>
+
+</a>
+
+</nav>
+
+<script>
+
+let allTransactions=[];
+
+async function loadTransactions(){
+
+try{
+
+const response=await fetch("/api/transactions");
+
+const data=await response.json();
+
+allTransactions=data;
+
+renderTransactions(data);
+
+}catch(error){
+
+console.error(error);
+
+alert("Unable to load transactions.");
+
+}
+
+}
+
+function renderTransactions(list){
+
+const container=document.getElementById("transactionList");
+
+container.innerHTML="";
+
+let credits=0;
+
+let debits=0;
+
+if(list.length===0){
+
+container.innerHTML=`
+
+<div class="transaction">
+
+<div class="left">
+
+<h3>No Transactions</h3>
+
+<p>Your transaction history is empty.</p>
+
+</div>
+
+</div>
+
+`;
+
+document.getElementById("credits").innerText="UGX 0";
+
+document.getElementById("debits").innerText="UGX 0";
+
+return;
+
+}
+
+list.forEach(item=>{
+
+if(item.type==="Deposit"||
+item.type==="Commission"||
+item.type==="Profit"){
+
+credits+=Number(item.amount);
+
+}else{
+
+debits+=Number(item.amount);
+
+}
+
+let amountClass=
+(item.type==="Deposit"||
+item.type==="Commission"||
+item.type==="Profit")
+?"credit":"debit";
+
+let statusClass="completed";
+
+if(item.status==="Pending")
+statusClass="pending";
+
+if(item.status==="Failed")
+statusClass="failed";
+
+container.innerHTML+=`
+
+<div class="transaction">
+
+<div class="left">
+
+<h3>${item.type}</h3>
+
+<p>${item.description}</p>
+
+<p>${item.date}</p>
+
+<span class="status ${statusClass}">
+${item.status}
+</span>
+
+</div>
+
+<div>
+
+<div class="amount ${amountClass}">
+
+${amountClass==="credit"?"+":"-"}
+
+UGX ${Number(item.amount).toLocaleString()}
+
+</div>
+
+</div>
+
+</div>
+
+`;
+
+});
+
+document.getElementById("credits").innerText=
+"UGX "+credits.toLocaleString();
+
+document.getElementById("debits").innerText=
+"UGX "+debits.toLocaleString();
+
+}
+
+document.getElementById("search")
+.addEventListener("keyup",filterTransactions);
+
+document.getElementById("filter")
+.addEventListener("change",filterTransactions);
+
+function filterTransactions(){
+
+const keyword=
+document.getElementById("search")
+.value.toLowerCase();
+
+const type=
+document.getElementById("filter")
+.value;
+
+const filtered=
+allTransactions.filter(item=>{
+
+const matchesKeyword=
+item.description.toLowerCase().includes(keyword)||
+item.type.toLowerCase().includes(keyword);
+
+const matchesType=
+type==="All"||item.type===type;
+
+return matchesKeyword&&matchesType;
+
+});
+
+renderTransactions(filtered);
+
+}
+
+loadTransactions();
+
+</script>
+
+</body>
+
+</html>

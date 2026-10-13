@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0">
+
+<title>Change Transaction PIN</title>
+
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Segoe UI,sans-serif;
+}
+
+body{
+background:#0b0f19;
+color:white;
+display:flex;
+justify-content:center;
+align-items:center;
+min-height:100vh;
+padding:20px;
+}
+
+.container{
+width:100%;
+max-width:420px;
+background:#161d2d;
+padding:30px;
+border-radius:20px;
+box-shadow:0 10px 30px rgba(0,0,0,.4);
+}
+
+h2{
+text-align:center;
+margin-bottom:25px;
+color:#f59e0b;
+}
+
+.form-group{
+margin-bottom:18px;
+}
+
+.form-group label{
+display:block;
+margin-bottom:8px;
+}
+
+.pin-box{
+position:relative;
+}
+
+.pin-box input{
+width:100%;
+padding:14px;
+background:#20293d;
+border:none;
+border-radius:10px;
+color:white;
+font-size:20px;
+letter-spacing:8px;
+text-align:center;
+}
+
+.pin-box i{
+position:absolute;
+right:15px;
+top:15px;
+cursor:pointer;
+color:#9ca3af;
+}
+
+small{
+display:block;
+margin-top:8px;
+color:#9ca3af;
+}
+
+button{
+width:100%;
+padding:15px;
+background:#f59e0b;
+border:none;
+border-radius:10px;
+font-size:16px;
+font-weight:bold;
+cursor:pointer;
+margin-top:10px;
+}
+
+button:hover{
+background:#ffb300;
+}
+
+.message{
+margin-top:15px;
+text-align:center;
+font-weight:bold;
+color:#10b981;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h2>Change Transaction PIN</h2>
+
+<form id="pinForm">
+
+<div class="form-group">
+
+<label>Current PIN</label>
+
+<div class="pin-box">
+
+<input
+type="password"
+id="currentPin"
+inputmode="numeric"
+maxlength="6"
+required>
+
+<i class="fa-solid fa-eye toggle"></i>
+
+</div>
+
+</div>
+
+<div class="form-group">
+
+<label>New PIN</label>
+
+<div class="pin-box">
+
+<input
+type="password"
+id="newPin"
+inputmode="numeric"
+maxlength="6"
+required>
+
+<i class="fa-solid fa-eye toggle"></i>
+
+</div>
+
+<small>Use a 4-digit or 6-digit PIN.</small>
+
+</div>
+
+<div class="form-group">
+
+<label>Confirm New PIN</label>
+
+<div class="pin-box">
+
+<input
+type="password"
+id="confirmPin"
+inputmode="numeric"
+maxlength="6"
+required>
+
+<i class="fa-solid fa-eye toggle"></i>
+
+</div>
+
+</div>
+
+<button type="submit">
+
+Update PIN
+
+</button>
+
+<div class="message" id="message"></div>
+
+</form>
+
+</div>
+<script>
+
+// ===============================
+// Show / Hide PIN
+// ===============================
+
+document.querySelectorAll(".toggle").forEach(icon=>{
+
+icon.addEventListener("click",()=>{
+
+const input=icon.previousElementSibling;
+
+if(input.type==="password"){
+
+input.type="text";
+
+icon.classList.replace("fa-eye","fa-eye-slash");
+
+}else{
+
+input.type="password";
+
+icon.classList.replace("fa-eye-slash","fa-eye");
+
+}
+
+});
+
+});
+
+// ===============================
+// Allow Numbers Only
+// ===============================
+
+["currentPin","newPin","confirmPin"].forEach(id=>{
+
+document.getElementById(id)
+
+.addEventListener("input",function(){
+
+this.value=this.value.replace(/\D/g,"");
+
+});
+
+});
+
+// ===============================
+// Submit Form
+// ===============================
+
+document.getElementById("pinForm")
+
+.addEventListener("submit",async function(e){
+
+e.preventDefault();
+
+const currentPin=
+
+document.getElementById("currentPin").value;
+
+const newPin=
+
+document.getElementById("newPin").value;
+
+const confirmPin=
+
+document.getElementById("confirmPin").value;
+
+// Validate PIN length
+
+if(!(newPin.length===4 || newPin.length===6)){
+
+alert("PIN must contain exactly 4 or 6 digits.");
+
+return;
+
+}
+
+// Confirm PIN
+
+if(newPin!==confirmPin){
+
+alert("PINs do not match.");
+
+return;
+
+}
+
+// Prevent same PIN
+
+if(currentPin===newPin){
+
+alert("New PIN must be different from the current PIN.");
+
+return;
+
+}
+
+try{
+
+const response=await fetch("/api/change-pin",{
+
+method:"POST",
+
+headers:{
+
+"Content-Type":"application/json"
+
+},
+
+body:JSON.stringify({
+
+currentPin,
+
+newPin
+
+})
+
+});
+
+const result=await response.json();
+
+if(response.ok){
+
+document.getElementById("message").innerHTML=
+
+"✅ Transaction PIN updated successfully.";
+
+document.getElementById("pinForm").reset();
+
+}else{
+
+alert(result.message || "Failed to update PIN.");
+
+}
+
+}catch(error){
+
+console.error(error);
+
+alert("Unable to connect to the server.");
+
+}
+
+});
+
+</script>
+
+</body>
+
+</html>
