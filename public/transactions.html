@@ -358,26 +358,23 @@ Profit
 
 let allTransactions=[];
 
+function getToken(){return localStorage.getItem('token')||sessionStorage.getItem('token');}
 async function loadTransactions(){
-
 try{
-
-const response=await fetch("/api/transactions");
-
-const data=await response.json();
-
-allTransactions=data;
-
-renderTransactions(data);
-
+  const token = getToken();
+  if (!token) { window.location.href = 'login.html'; return; }
+  const response = await fetch("/api/transactions", {
+    headers: { 'Authorization': 'Bearer ' + token }
+  });
+  if (response.status === 401) { window.location.href = 'login.html'; return; }
+  const payload = await response.json();
+  const data = payload.transactions || payload || [];
+  allTransactions = Array.isArray(data) ? data : [];
+  renderTransactions(allTransactions);
 }catch(error){
-
-console.error(error);
-
-alert("Unable to load transactions.");
-
+  console.error(error);
+  alert("Unable to load transactions.");
 }
-
 }
 
 function renderTransactions(list){
@@ -417,67 +414,35 @@ return;
 }
 
 list.forEach(item=>{
+  const t = String(item.type || '').toLowerCase();
+  const isCredit = t === 'deposit' || t === 'commission' || t === 'profit';
+  if (isCredit) credits += Number(item.amount || 0);
+  else debits += Number(item.amount || 0);
 
-if(item.type==="Deposit"||
-item.type==="Commission"||
-item.type==="Profit"){
+  const amountClass = isCredit ? 'credit' : 'debit';
+  const st = String(item.status || 'completed').toLowerCase();
+  let statusClass = 'completed';
+  if (st === 'pending') statusClass = 'pending';
+  if (st === 'rejected' || st === 'failed') statusClass = 'failed';
 
-credits+=Number(item.amount);
+  const desc = item.note || item.description || item.method || '';
+  const dateStr = item.createdAt || item.created_at || item.date;
+  const dateFmt = dateStr ? new Date(dateStr).toLocaleString() : '';
 
-}else{
-
-debits+=Number(item.amount);
-
-}
-
-let amountClass=
-(item.type==="Deposit"||
-item.type==="Commission"||
-item.type==="Profit")
-?"credit":"debit";
-
-let statusClass="completed";
-
-if(item.status==="Pending")
-statusClass="pending";
-
-if(item.status==="Failed")
-statusClass="failed";
-
-container.innerHTML+=`
-
+  container.innerHTML += `
 <div class="transaction">
-
-<div class="left">
-
-<h3>${item.type}</h3>
-
-<p>${item.description}</p>
-
-<p>${item.date}</p>
-
-<span class="status ${statusClass}">
-${item.status}
-</span>
-
-</div>
-
-<div>
-
-<div class="amount ${amountClass}">
-
-${amountClass==="credit"?"+":"-"}
-
-UGX ${Number(item.amount).toLocaleString()}
-
-</div>
-
-</div>
-
-</div>
-
-`;
-
+  <div class="left">
+    <h3>${item.type || '—'}</h3>
+    <p>${desc}</p>
+    <p>${dateFmt}</p>
+    <span class="status ${statusClass}">${item.status || '—'}</span>
+  </div>
+  <div>
+    <div class="amount ${amountClass}">
+      ${isCredit ? '+' : '-'} UGX ${Number(item.amount || 0).toLocaleString()}
+    </div>
+  </div>
+</div>`;
 });
 
 document.getElementById("credits").innerText=
@@ -507,12 +472,10 @@ document.getElementById("filter")
 const filtered=
 allTransactions.filter(item=>{
 
-const matchesKeyword=
-item.description.toLowerCase().includes(keyword)||
-item.type.toLowerCase().includes(keyword);
-
-const matchesType=
-type==="All"||item.type===type;
+const desc = String(item.note || item.description || item.method || '').toLowerCase();
+const typ = String(item.type || '').toLowerCase();
+const matchesKeyword = !keyword || desc.includes(keyword) || typ.includes(keyword);
+const matchesType = type === 'All' || typ === String(type).toLowerCase();
 
 return matchesKeyword&&matchesType;
 
