@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Investment Plans & Orders</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:Segoe UI,sans-serif;}
+body{background:#0b0f19;color:white;padding-bottom:100px;}
+header{background:#111827;padding:18px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #333;position:sticky;top:0;z-index:50;}
+header h2{color:#f59e0b;}
+.summary{display:grid;grid-template-columns:repeat(2,1fr);gap:15px;padding:15px;}
+.card{background:#161d2d;padding:18px;border-radius:15px;}
+.card span{color:#999;font-size:0.85rem;}
+.card h2{margin-top:8px;color:#f59e0b;font-size:1.3rem;}
+.section{padding:15px;}
+.section h3{margin-bottom:15px;color:#f59e0b;}
+.plans{display:grid;grid-template-columns:1fr;gap:14px;}
+@media(min-width:600px){.plans{grid-template-columns:1fr 1fr;}}
+.plan{background:#161d2d;border-radius:16px;padding:20px;border:1px solid #222;}
+.plan h3{color:#f59e0b;margin-bottom:10px;font-size:1.15rem;}
+.plan .row{display:flex;justify-content:space-between;margin:6px 0;color:#bbb;font-size:0.9rem;}
+.plan .row strong{color:#fff;}
+.plan-btn{margin-top:14px;width:100%;background:#f59e0b;color:#111;border:none;padding:12px;border-radius:10px;font-weight:700;cursor:pointer;font-size:0.95rem;}
+.plan-btn:hover{opacity:0.9;}
+.investment{background:#161d2d;border-radius:15px;padding:18px;margin-bottom:15px;}
+.title{display:flex;justify-content:space-between;align-items:center;}
+.status{background:#00b894;padding:5px 10px;border-radius:20px;font-size:12px;}
+.details{margin-top:12px;}
+.details p{margin:6px 0;color:#bbb;font-size:0.9rem;}
+.progress{height:8px;background:#333;border-radius:20px;overflow:hidden;margin-top:10px;}
+.progress div{height:100%;background:#f59e0b;}
+.history{background:#161d2d;padding:15px;border-radius:15px;margin-bottom:12px;}
+.history p{margin:5px 0;color:#bbb;font-size:0.9rem;}
+.empty{text-align:center;color:#777;padding:24px;}
+.bottom-nav{position:fixed;bottom:0;left:0;width:100%;background:#111827;display:flex;justify-content:space-around;padding:12px 0;border-top:1px solid #222;}
+.bottom-nav a{color:#aaa;text-decoration:none;display:flex;flex-direction:column;align-items:center;font-size:13px;}
+.bottom-nav a.active{color:#f59e0b;}
+/* Modal */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.7);display:none;align-items:center;justify-content:center;z-index:200;padding:16px;}
+.modal-bg.open{display:flex;}
+.modal{background:#161d2d;border-radius:16px;padding:24px;width:100%;max-width:400px;border:1px solid #333;}
+.modal h3{color:#f59e0b;margin-bottom:6px;}
+.modal .sub{color:#999;font-size:0.85rem;margin-bottom:18px;}
+.modal label{display:block;color:#aaa;font-size:0.8rem;margin-bottom:6px;}
+.modal input{width:100%;padding:12px;border-radius:10px;border:1px solid #333;background:#0b0f19;color:#fff;margin-bottom:14px;font-size:1rem;}
+.modal .actions{display:flex;gap:10px;margin-top:8px;}
+.modal .actions button{flex:1;padding:12px;border:none;border-radius:10px;font-weight:700;cursor:pointer;}
+.btn-cancel{background:#333;color:#fff;}
+.btn-confirm{background:#f59e0b;color:#111;}
+.wallet-hint{background:#0b0f19;border-radius:10px;padding:10px 12px;margin-bottom:14px;font-size:0.85rem;color:#9ca3af;}
+.wallet-hint strong{color:#f59e0b;}
+</style>
+</head>
+<body>
+
+<header>
+  <h2>Investments</h2>
+  <span id="walletBadge" style="color:#9ca3af;font-size:0.85rem;">Wallet: —</span>
+</header>
+
+<div class="summary">
+  <div class="card">
+    <span>Active Investments</span>
+    <h2 id="activeCount">0</h2>
+  </div>
+  <div class="card">
+    <span>Est. Profit (so far)</span>
+    <h2 id="profit">UGX 0</h2>
+  </div>
+</div>
+
+<!-- AVAILABLE PLANS -->
+<div class="section">
+  <h3>Available Plans</h3>
+  <div class="plans" id="plansList">
+    <!-- filled by JS -->
+  </div>
+</div>
+
+<!-- ACTIVE -->
+<div class="section">
+  <h3>My Active Investments</h3>
+  <div id="investmentList"><div class="empty">Loading…</div></div>
+</div>
+
+<!-- HISTORY -->
+<div class="section">
+  <h3>History</h3>
+  <div id="historyList"><div class="empty">No history yet</div></div>
+</div>
+
+<nav class="bottom-nav">
+  <a href="index.html"><i class="fa-solid fa-house"></i>Home</a>
+  <a href="order.html" class="active"><i class="fa-solid fa-chart-line"></i>Orders</a>
+  <a href="team.html"><i class="fa-solid fa-users"></i>Team</a>
+  <a href="me.html"><i class="fa-solid fa-user"></i>Me</a>
+</nav>
+
+<!-- INVEST MODAL -->
+<div class="modal-bg" id="investModal">
+  <div class="modal">
+    <h3 id="modalTitle">Invest</h3>
+    <p class="sub" id="modalSub">Enter amount to invest</p>
+    <div class="wallet-hint">Your wallet: <strong id="modalWallet">UGX 0</strong></div>
+    <label>Amount (UGX)</label>
+    <input type="number" id="investAmount" min="0" placeholder="Enter amount">
+    <label>PIN (only if you set one)</label>
+    <input type="password" id="investPin" placeholder="Optional if no PIN set" maxlength="6">
+    <div class="actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-confirm" onclick="confirmInvest()">Confirm Invest</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const PLANS = [
+  { name: 'Starter Plan',  min: 10000,  daily: 2, days: 30, desc: 'Entry level' },
+  { name: 'Silver Plan',   min: 100000, daily: 3, days: 30, desc: 'Balanced growth' },
+  { name: 'Gold Plan',     min: 500000, daily: 4, days: 45, desc: 'Higher returns' },
+  { name: 'Platinum Plan', min: 2000000,daily: 5, days: 60, desc: 'Premium plan' },
+];
+
+let selectedPlan = null;
+let walletBalance = 0;
+
+function getToken() {
+  return localStorage.getItem('token') || sessionStorage.getItem('token');
+}
+
+function authHeaders() {
+  const t = getToken();
+  return t ? { 'Authorization': 'Bearer ' + t, 'Content-Type': 'application/json' } : { 'Content-Type': 'application/json' };
+}
+
+function requireAuth() {
+  if (!getToken()) {
+    window.location.href = 'login.html';
+    return false;
+  }
+  return true;
+}
+
+function renderPlans() {
+  const el = document.getElementById('plansList');
+  el.innerHTML = PLANS.map((p, i) => `
+    <div class="plan">
+      <h3>${p.name}</h3>
+      <div class="row"><span>Minimum</span><strong>UGX ${p.min.toLocaleString()}</strong></div>
+      <div class="row"><span>Daily Profit</span><strong>${p.daily}%</strong></div>
+      <div class="row"><span>Duration</span><strong>${p.days} Days</strong></div>
+      <div class="row"><span>Daily on min</span><strong>UGX ${Math.round(p.min * p.daily / 100).toLocaleString()}</strong></div>
+      <button class="plan-btn" onclick="openInvest(${i})">Invest Now</button>
+    </div>
+  `).join('');
+}
+
+function openInvest(index) {
+  if (!requireAuth()) return;
+  selectedPlan = PLANS[index];
+  document.getElementById('modalTitle').textContent = selectedPlan.name;
+  document.getElementById('modalSub').textContent =
+    `Min UGX ${selectedPlan.min.toLocaleString()} · ${selectedPlan.daily}% daily · ${selectedPlan.days} days`;
+  document.getElementById('modalWallet').textContent = 'UGX ' + Number(walletBalance).toLocaleString();
+  document.getElementById('investAmount').value = selectedPlan.min;
+  document.getElementById('investPin').value = '';
+  document.getElementById('investModal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('investModal').classList.remove('open');
+  selectedPlan = null;
+}
+
+async function confirmInvest() {
+  if (!selectedPlan) return;
+  const amount = parseFloat(document.getElementById('investAmount').value);
+  const pin = document.getElementById('investPin').value.trim();
+
+  if (!amount || amount < selectedPlan.min) {
+    alert('Minimum for this plan is UGX ' + selectedPlan.min.toLocaleString());
+    return;
+  }
+  if (amount > walletBalance) {
+    alert('Insufficient wallet balance. Deposit first.');
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/orders', {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({
+        planName: selectedPlan.name,
+        amount,
+        dailyReturnPercent: selectedPlan.daily,
+        durationDays: selectedPlan.days,
+        pin: pin || undefined
+      })
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      alert(data.message || 'Investment failed');
+      return;
+    }
+    alert('Investment successful!');
+    closeModal();
+    loadOrders();
+    loadWallet();
+  } catch (e) {
+    alert('Network error');
+  }
+}
+
+async function loadWallet() {
+  try {
+    const res = await fetch('/api/users/dashboard', { headers: authHeaders() });
+    if (res.status === 401) { window.location.href = 'login.html'; return; }
+    const payload = await res.json();
+    const data = payload.data || payload.dashboard || payload;
+    walletBalance = Number(data.walletBalance ?? data.balance ?? 0);
+    document.getElementById('walletBadge').textContent = 'Wallet: UGX ' + walletBalance.toLocaleString();
+  } catch (_) {}
+}
+
+async function loadOrders() {
+  if (!requireAuth()) return;
+  try {
+    const res = await fetch('/api/orders', { headers: authHeaders() });
+    if (res.status === 401) { window.location.href = 'login.html'; return; }
+    const data = await res.json();
+
+    const active = data.active || [];
+    const history = data.history || [];
+
+    document.getElementById('activeCount').textContent = data.activeCount ?? active.length;
+    document.getElementById('profit').textContent =
+      'UGX ' + Number(data.totalProfit || 0).toLocaleString();
+
+    const list = document.getElementById('investmentList');
+    if (!active.length) {
+      list.innerHTML = '<div class="empty">No active investments yet. Choose a plan above.</div>';
+    } else {
+      list.innerHTML = active.map(item => `
+        <div class="investment">
+          <div class="title">
+            <h3>${item.product_name || item.planName || 'Plan'}</h3>
+            <span class="status">${item.status || 'active'}</span>
+          </div>
+          <div class="details">
+            <p>Investment: UGX ${Number(item.amount || 0).toLocaleString()}</p>
+            <p>Daily Income: UGX ${Number(item.daily_income || item.dailyIncome || 0).toLocaleString()}</p>
+            <p>Days Left: ${item.days_left ?? '—'}</p>
+            <div class="progress"><div style="width:${item.progress || 0}%"></div></div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    const hist = document.getElementById('historyList');
+    if (!history.length) {
+      hist.innerHTML = '<div class="empty">No completed investments yet</div>';
+    } else {
+      hist.innerHTML = history.map(item => `
+        <div class="history">
+          <p><b>${item.product_name || 'Plan'}</b></p>
+          <p>Amount: UGX ${Number(item.amount || 0).toLocaleString()}</p>
+          <p>Status: ${item.status}</p>
+          <p>Date: ${item.date || ''}</p>
+        </div>
+      `).join('');
+    }
+  } catch (err) {
+    console.log(err);
+    document.getElementById('investmentList').innerHTML =
+      '<div class="empty">Failed to load investments</div>';
+  }
+}
+
+// Also support ?plan= from index links later
+renderPlans();
+loadWallet();
+loadOrders();
+
+// Close modal on background click
+document.getElementById('investModal').addEventListener('click', e => {
+  if (e.target.id === 'investModal') closeModal();
+});
+</script>
+</body>
+</html>
