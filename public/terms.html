@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Terms & Conditions — JAZTECH</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:Segoe UI,sans-serif;}
+body{background:#0b0f19;color:#e5e7eb;line-height:1.65;padding-bottom:40px;}
+body.light-mode{background:#f5f5f5;color:#111;}
+header{background:#111827;padding:18px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #1f2937;position:sticky;top:0;}
+header h2{color:#f59e0b;font-size:1.15rem;}
+header a{color:#9ca3af;text-decoration:none;font-size:.9rem;}
+.container{max-width:800px;margin:0 auto;padding:24px 16px;}
+h1{color:#f59e0b;font-size:1.5rem;margin-bottom:8px;}
+.updated{color:#9ca3af;font-size:.85rem;margin-bottom:24px;}
+h3{color:#f59e0b;margin:22px 0 10px;font-size:1.05rem;}
+p,li{color:#d1d5db;margin-bottom:10px;font-size:.95rem;}
+body.light-mode p, body.light-mode li{color:#333;}
+ul{padding-left:20px;margin-bottom:12px;}
+.card{background:#161d2d;border-radius:14px;padding:22px;border:1px solid #1f2937;}
+body.light-mode .card{background:#fff;border-color:#e5e7eb;}
+body.light-mode header{background:#fff;border-color:#e5e7eb;}
+</style>
+<script>
+(function(){
+  const dark = localStorage.getItem('jaz_dark_mode');
+  if (dark === '0') document.documentElement.classList.add('pre-light');
+})();
+</script>
+</head>
+<body>
+<header>
+  <h2>JAZTECH</h2>
+  <a href="settings.html"><i class="fa-solid fa-arrow-left"></i> Back</a>
+</header>
+<div class="container">
+  <div class="card">
+    <h1 data-i18n="terms_title">Terms & Conditions</h1>
+    <p class="updated">Last updated: October 2026</p>
+
+    <h3>1. Acceptance of Terms</h3>
+    <p>By creating an account or using the JAZTECH platform, you agree to these Terms & Conditions. If you do not agree, please do not use the service.</p>
+
+    <h3>2. Eligibility</h3>
+    <p>You must provide accurate registration information and be legally able to enter into this agreement under the laws of your country.</p>
+
+    <h3>3. Account Security</h3>
+    <ul>
+      <li>You are responsible for keeping your password and transaction PIN confidential.</li>
+      <li>Notify support immediately if you suspect unauthorized access.</li>
+      <li>JAZTECH is not liable for losses caused by shared or weak credentials.</li>
+    </ul>
+
+    <h3>4. Deposits & Withdrawals</h3>
+    <ul>
+      <li>Deposits may require admin approval before funds appear in your wallet.</li>
+      <li>Withdrawals are subject to minimum limits, fees, and verification.</li>
+      <li>Processing times depend on payment networks and review status.</li>
+    </ul>
+
+    <h3>5. Investments</h3>
+    <p>Investment plans display estimated returns. Past or illustrated performance is not a guarantee of future results. Only invest amounts you can afford.</p>
+
+    <h3>6. Referrals</h3>
+    <p>Referral rewards are paid according to platform rules and may change. Abuse of the referral system may result in account suspension.</p>
+
+    <h3>7. Prohibited Use</h3>
+    <p>You may not use the platform for fraud, money laundering, harassment, or any illegal activity. We may suspend accounts that violate these rules.</p>
+
+    <h3>8. Limitation of Liability</h3>
+    <p>JAZTECH is provided on an “as is” basis. To the maximum extent permitted by law, we are not liable for indirect or consequential losses arising from use of the platform.</p>
+
+    <h3>9. Changes</h3>
+    <p>We may update these terms from time to time. Continued use after changes means you accept the updated terms.</p>
+
+    <h3>10. Contact</h3>
+    <p>For questions about these terms, use the in-app Support page.</p>
+  </div>
+</div>
+<script>
+(function(){
+  if (localStorage.getItem('jaz_dark_mode') === '0') document.body.classList.add('light-mode');
+})();
+</script>
+
+<script>
+(function(){
+  // Dark / light mode (default dark)
+  var darkPref = localStorage.getItem('jaz_dark_mode');
+  if (darkPref === '0') {
+    document.addEventListener('DOMContentLoaded', function(){
+      document.body.classList.add('light-mode');
+      document.body.style.background = '#f5f5f5';
+      document.body.style.color = '#111';
+    });
+  }
+
+  // Simple i18n
+  var LANG = localStorage.getItem('jaz_lang') || 'en';
+  var I18N = {
+    en: {
+      Home: 'Home', Orders: 'Orders', Team: 'Team', Me: 'Me',
+      Settings: 'Settings', Deposit: 'Deposit', Withdraw: 'Withdraw',
+      Login: 'Login', Register: 'Register', Logout: 'Logout',
+      'Total Balance': 'Total Balance', 'Total Profit': 'Total Profit',
+      'Active Investments': 'Active Investments', 'Referral Earnings': 'Referral Earnings',
+      'Investment Plans': 'Investment Plans', 'Invest Now': 'Invest Now',
+      Notifications: 'Notifications', Support: 'Support',
+      'Edit Profile': 'Edit Profile', 'Change Password': 'Change Password',
+      'Change Transaction PIN': 'Change Transaction PIN',
+      'Privacy Policy': 'Privacy Policy', 'Terms & Conditions': 'Terms & Conditions',
+      Account: 'Account', Security: 'Security', Preferences: 'Preferences', About: 'About',
+      'Dark Mode': 'Dark Mode', Language: 'Language'
+    },
+    sw: {
+      Home: 'Nyumbani', Orders: 'Oda', Team: 'Timu', Me: 'Mimi',
+      Settings: 'Mipangilio', Deposit: 'Weka Pesa', Withdraw: 'Toa Pesa',
+      Login: 'Ingia', Register: 'Jisajili', Logout: 'Toka',
+      'Total Balance': 'Salio Jumla', 'Total Profit': 'Faida Jumla',
+      'Active Investments': 'Uwekezaji Hai', 'Referral Earnings': 'Mapato ya Rufaa',
+      'Investment Plans': 'Mipango ya Uwekezaji', 'Invest Now': 'wekeza Sasa',
+      Notifications: 'Arifa', Support: 'Msaada',
+      'Edit Profile': 'Hariri Wasifu', 'Change Password': 'Badilisha Nenosiri',
+      'Change Transaction PIN': 'Badilisha PIN ya Muamala',
+      'Privacy Policy': 'Sera ya Faragha', 'Terms & Conditions': 'Sheria na Masharti',
+      Account: 'Akaunti', Security: 'Usalama', Preferences: 'Mapendeleo', About: 'Kuhusu',
+      'Dark Mode': 'Hali ya Giza', Language: 'Lugha'
+    },
+    fr: {
+      Home: 'Accueil', Orders: 'Ordres', Team: 'Équipe', Me: 'Moi',
+      Settings: 'Paramètres', Deposit: 'Dépôt', Withdraw: 'Retrait',
+      Login: 'Connexion', Register: "S'inscrire", Logout: 'Déconnexion',
+      'Total Balance': 'Solde total', 'Total Profit': 'Profit total',
+      'Active Investments': 'Investissements actifs', 'Referral Earnings': 'Gains de parrainage',
+      'Investment Plans': "Plans d'investissement", 'Invest Now': 'Investir',
+      Notifications: 'Notifications', Support: 'Support',
+      'Edit Profile': 'Modifier le profil', 'Change Password': 'Changer le mot de passe',
+      'Change Transaction PIN': 'Changer le PIN',
+      'Privacy Policy': 'Politique de confidentialité', 'Terms & Conditions': 'Conditions générales',
+      Account: 'Compte', Security: 'Sécurité', Preferences: 'Préférences', About: 'À propos',
+      'Dark Mode': 'Mode sombre', Language: 'Langue'
+    }
+  };
+
+  function applyLang(){
+    var dict = I18N[LANG] || I18N.en;
+    // elements with data-i18n
+    document.querySelectorAll('[data-i18n]').forEach(function(el){
+      var key = el.getAttribute('data-i18n');
+      if (dict[key]) el.textContent = dict[key];
+    });
+    // common nav / button text nodes (exact match)
+    var walk = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null);
+    var nodes = [];
+    while (walk.nextNode()) nodes.push(walk.currentNode);
+    nodes.forEach(function(node){
+      var t = (node.nodeValue || '').trim();
+      if (!t || t.length > 40) return;
+      if (dict[t]) {
+        node.nodeValue = node.nodeValue.replace(t, dict[t]);
+      }
+    });
+    document.documentElement.lang = LANG;
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyLang);
+  } else {
+    applyLang();
+  }
+
+  // Expose for settings page
+  window.JAZ_setLang = function(code){
+    localStorage.setItem('jaz_lang', code);
+    LANG = code;
+    location.reload();
+  };
+  window.JAZ_setDark = function(enabled){
+    localStorage.setItem('jaz_dark_mode', enabled ? '1' : '0');
+    location.reload();
+  };
+})();
+</script>
+
+</body>
+</html>

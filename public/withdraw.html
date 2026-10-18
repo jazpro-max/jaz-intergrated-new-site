@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0">
+
+<title>Withdraw Funds</title>
+
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+<style>
+
+*{
+
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Segoe UI,sans-serif;
+
+}
+
+body{
+
+background:#0b0f19;
+color:white;
+padding-bottom:90px;
+
+}
+
+header{
+
+background:#111827;
+padding:18px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+border-bottom:1px solid #1f2937;
+position:sticky;
+top:0;
+z-index:100;
+
+}
+
+header h2{
+
+color:#f59e0b;
+
+}
+
+.container{
+
+max-width:700px;
+margin:auto;
+padding:16px;
+
+}
+
+.card{
+
+background:#161d2d;
+padding:20px;
+border-radius:18px;
+margin-bottom:18px;
+box-shadow:0 5px 18px rgba(0,0,0,.3);
+
+}
+
+.card-title{
+
+font-size:18px;
+font-weight:bold;
+color:#f59e0b;
+margin-bottom:15px;
+
+}
+
+.balance{
+
+font-size:34px;
+font-weight:bold;
+margin-top:10px;
+
+}
+
+.balance span{
+
+font-size:16px;
+color:#9ca3af;
+
+}
+
+label{
+
+display:block;
+margin-top:15px;
+margin-bottom:6px;
+
+}
+
+input,
+select{
+
+width:100%;
+padding:14px;
+background:#20293d;
+border:1px solid #374151;
+border-radius:10px;
+color:white;
+font-size:15px;
+
+}
+
+input:focus,
+select:focus{
+
+outline:none;
+border-color:#f59e0b;
+
+}
+
+button{
+
+width:100%;
+padding:15px;
+background:#f59e0b;
+border:none;
+border-radius:12px;
+margin-top:20px;
+font-weight:bold;
+font-size:16px;
+cursor:pointer;
+
+}
+
+button:hover{
+
+background:#ffb300;
+
+}
+
+.history{
+
+background:#20293d;
+padding:15px;
+border-radius:12px;
+margin-top:15px;
+
+}
+
+.status{
+
+padding:5px 12px;
+border-radius:20px;
+font-size:12px;
+font-weight:bold;
+
+}
+
+.pending{
+
+background:#f59e0b;
+color:#000;
+
+}
+
+.approved{
+
+background:#10b981;
+
+}
+
+.rejected{
+
+background:#ef4444;
+
+}
+
+.bottom-nav{
+
+position:fixed;
+bottom:0;
+left:0;
+width:100%;
+background:#111827;
+display:flex;
+justify-content:space-around;
+padding:12px 0;
+
+}
+
+.bottom-nav a{
+
+text-decoration:none;
+color:#9ca3af;
+display:flex;
+flex-direction:column;
+align-items:center;
+font-size:13px;
+
+}
+
+.bottom-nav a.active{
+
+color:#f59e0b;
+
+}
+
+
+/* ===== Custom App Popup ===== */
+.app-popup-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.72);
+  display:none;align-items:center;justify-content:center;
+  z-index:99999;padding:20px;
+  backdrop-filter:blur(4px);
+}
+.app-popup-overlay.open{display:flex;animation:appPopupFade .2s ease;}
+@keyframes appPopupFade{from{opacity:0}to{opacity:1}}
+.app-popup{
+  background:#161d2d;border:1px solid #2a3548;border-radius:18px;
+  width:100%;max-width:340px;padding:28px 24px 22px;
+  text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.55);
+  animation:appPopupUp .25s ease;
+}
+@keyframes appPopupUp{from{transform:translateY(12px);opacity:0}to{transform:none;opacity:1}}
+.app-popup .brand{
+  font-size:.75rem;font-weight:700;letter-spacing:.12em;
+  color:#f59e0b;text-transform:uppercase;margin-bottom:14px;
+}
+.app-popup .icon{
+  width:56px;height:56px;border-radius:50%;margin:0 auto 14px;
+  display:flex;align-items:center;justify-content:center;font-size:1.5rem;
+}
+.app-popup.success .icon{background:rgba(16,185,129,.15);color:#10b981;}
+.app-popup.error .icon{background:rgba(239,68,68,.15);color:#ef4444;}
+.app-popup.info .icon{background:rgba(245,158,11,.15);color:#f59e0b;}
+.app-popup h3{color:#fff;font-size:1.15rem;margin-bottom:8px;font-weight:600;}
+.app-popup p{color:#9ca3af;font-size:.9rem;line-height:1.45;margin-bottom:20px;}
+.app-popup .ok-btn{
+  width:100%;padding:12px;border:none;border-radius:10px;
+  background:#f59e0b;color:#111;font-weight:700;font-size:.95rem;
+  cursor:pointer;font-family:inherit;
+}
+.app-popup .ok-btn:hover{background:#d97706;}
+.app-popup .ok-btn:disabled{opacity:.7;cursor:not-allowed;}
+
+
+body.light-mode{background:#f5f5f5 !important;color:#111 !important;}
+body.light-mode .card,
+body.light-mode .login-box,
+body.light-mode .register-box,
+body.light-mode .metric-card,
+body.light-mode .table-wrap,
+body.light-mode .sidebar,
+body.light-mode header,
+body.light-mode .header,
+body.light-mode .bottom-nav,
+body.light-mode .topbar{background:#fff !important;color:#111 !important;border-color:#e5e7eb !important;}
+body.light-mode a{color:inherit;}
+body.light-mode input, body.light-mode select, body.light-mode textarea{
+  background:#f3f4f6 !important;color:#111 !important;border-color:#d1d5db !important;
+}
+body.light-mode .item{color:#111 !important;border-color:#e5e7eb !important;}
+body.light-mode .section-title, body.light-mode h1, body.light-mode h2, body.light-mode h3{color:#b45309 !important;}
+body.light-mode .right, body.light-mode .muted{color:#6b7280 !important;}
+
+</style>
+
+</head>
+
+<body>
+
+<header>
+
+<h2>Withdraw</h2>
+
+<i class="fa-solid fa-money-bill-transfer fa-lg"></i>
+
+</header>
+
+<div class="container">
+
+<div class="card">
+
+<div class="card-title">
+
+Available Balance
+
+</div>
+
+<div class="balance">
+
+UGX <span id="balance">0</span>
+
+</div>
+
+</div>
+<!-- Withdrawal Form -->
+
+<div class="card">
+
+<div class="card-title">
+
+Request Withdrawal
+
+</div>
+
+<form id="withdrawForm">
+
+<label>Withdrawal Method</label>
+
+<select id="method" required>
+
+<option value="MTN">MTN Mobile Money</option>
+
+<option value="Airtel">Airtel Money</option>
+
+<option value="Bank">Bank Transfer</option>
+
+</select>
+
+<label>Phone / Account Number</label>
+
+<input
+type="text"
+id="account"
+placeholder="Enter phone or bank account number"
+required>
+
+<label>Account Name</label>
+
+<input
+type="text"
+id="accountName"
+placeholder="Enter account holder name"
+required>
+
+<label>Withdrawal Amount (UGX)</label>
+
+<input
+type="number"
+id="amount"
+placeholder="Minimum withdrawal 10,000 UGX"
+min="10000"
+required>
+
+<label>Transaction PIN</label>
+
+<input
+type="password"
+id="pin"
+maxlength="6"
+placeholder="Enter your 6-digit PIN"
+required>
+
+<button type="submit">
+
+<i class="fa-solid fa-paper-plane"></i>
+
+Submit Withdrawal
+
+</button>
+
+</form>
+
+</div>
+
+<!-- Withdrawal History -->
+
+<div class="card">
+
+<div class="card-title">
+
+Withdrawal History
+
+</div>
+
+<div id="withdrawHistory">
+
+<div class="history">
+
+<p>No withdrawal history found.</p>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+<!-- Bottom Navigation -->
+
+<nav class="bottom-nav">
+
+<a href="index.html">
+
+<i class="fa-solid fa-house"></i>
+
+<span>Home</span>
+
+</a>
+
+<a href="order.html">
+
+<i class="fa-solid fa-chart-line"></i>
+
+<span>Orders</span>
+
+</a>
+
+<a href="team.html">
+
+<i class="fa-solid fa-users"></i>
+
+<span>Team</span>
+
+</a>
+
+<a href="me.html" class="active">
+
+<i class="fa-solid fa-user"></i>
+
+<span>Me</span>
+
+</a>
+
+</nav>
+<script>
+
+function showAppPopup(options){
+  const opts = typeof options === 'string' ? { message: options, type: 'info' } : (options || {});
+  const type = opts.type || 'info';
+  const title = opts.title || (type === 'success' ? 'Success' : type === 'error' ? 'Error' : 'Notice');
+  const message = opts.message || '';
+  const onOk = opts.onOk || null;
+  let overlay = document.getElementById('appPopupOverlay');
+  if (!overlay) {
+    document.body.insertAdjacentHTML('beforeend', `
+<div class="app-popup-overlay" id="appPopupOverlay">
+  <div class="app-popup success" id="appPopup">
+    <div class="brand">JAZTECH</div>
+    <div class="icon" id="appPopupIcon"><i class="fa-solid fa-check"></i></div>
+    <h3 id="appPopupTitle">Success</h3>
+    <p id="appPopupMessage">Done.</p>
+    <button type="button" class="ok-btn" id="appPopupOk">OK</button>
+  </div>
+</div>
+`);
+    overlay = document.getElementById('appPopupOverlay');
+  }
+  const box = document.getElementById('appPopup');
+  const icon = document.getElementById('appPopupIcon');
+  const titleEl = document.getElementById('appPopupTitle');
+  const msgEl = document.getElementById('appPopupMessage');
+  const okBtn = document.getElementById('appPopupOk');
+  box.className = 'app-popup ' + type;
+  if (type === 'success') icon.innerHTML = '<i class="fa-solid fa-check"></i>';
+  else if (type === 'error') icon.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+  else icon.innerHTML = '<i class="fa-solid fa-circle-info"></i>';
+  titleEl.textContent = title;
+  msgEl.textContent = message;
+  overlay.classList.add('open');
+  okBtn.onclick = function(){
+    overlay.classList.remove('open');
+    if (typeof onOk === 'function') onOk();
+  };
+}
+// Prevent double-submit on forms
+function lockButton(btn, loadingText){
+  if (!btn) return function unlock(){};
+  if (btn.dataset.locked === '1') return null; // already locked
+  btn.dataset.locked = '1';
+  btn.dataset.prevText = btn.innerHTML;
+  btn.disabled = true;
+  btn.style.opacity = '0.7';
+  btn.style.cursor = 'not-allowed';
+  if (loadingText) btn.innerHTML = loadingText;
+  return function unlock(){
+    btn.dataset.locked = '0';
+    btn.disabled = false;
+    btn.style.opacity = '';
+    btn.style.cursor = '';
+    btn.innerHTML = btn.dataset.prevText || btn.innerHTML;
+  };
+}
+
+
+
+function getToken() {
+  return localStorage.getItem('token') || sessionStorage.getItem('token');
+}
+function authHeaders(json = true) {
+  const h = {};
+  if (json) h['Content-Type'] = 'application/json';
+  const t = getToken();
+  if (t) h['Authorization'] = 'Bearer ' + t;
+  return h;
+}
+function requireAuth() {
+  if (!getToken()) { window.location.href = 'login.html'; return false; }
+  return true;
+}
+
+async function loadBalance(){
+  if (!requireAuth()) return;
+  try {
+    const response = await fetch('/api/user/balance', { headers: authHeaders() });
+    if (response.status === 401) { window.location.href = 'login.html'; return; }
+    const data = await response.json();
+    const bal = data.walletBalance ?? data.balance ?? 0;
+    document.getElementById('balance').innerText = Number(bal || 0).toLocaleString();
+  } catch (error) { console.error(error); }
+}
+
+async function loadWithdrawHistory(){
+  if (!requireAuth()) return;
+  try {
+    const response = await fetch('/api/withdrawals/history', { headers: authHeaders() });
+    const data = await response.json();
+    const list = Array.isArray(data) ? data : (data.withdrawals || []);
+    const history = document.getElementById('withdrawHistory') || document.getElementById('history');
+    if (!history) return;
+    if (!list.length) {
+      history.innerHTML = '<div class="history"><p>No withdrawal history.</p></div>';
+      return;
+    }
+    history.innerHTML = list.map(item => {
+      const st = (item.status || 'pending').toLowerCase();
+      let statusClass = 'pending';
+      if (st === 'approved' || st === 'completed') statusClass = 'approved';
+      if (st === 'rejected') statusClass = 'rejected';
+      return `<div class="history">
+        <h4>UGX ${Number(item.amount||0).toLocaleString()}</h4>
+        <p>Method: ${item.method || '—'}</p>
+        <p>Account: ${item.account || item.accountDetails || '—'}</p>
+        <p>Date: ${new Date(item.created_at || item.createdAt).toLocaleString()}</p>
+        <br><span class="status ${statusClass}">${item.status || 'pending'}</span>
+      </div>`;
+    }).join('');
+  } catch (error) { console.error(error); }
+}
+
+const form = document.getElementById('withdrawForm');
+if (form) form.addEventListener('submit', async function(e) {
+  e.preventDefault();
+  if (!requireAuth()) return;
+  const btn = e.submitter || form.querySelector('button[type="submit"]') || form.querySelector('button');
+  const unlock = lockButton(btn, 'Processing…');
+  if (!unlock) return;
+  const amount = Number(document.getElementById('amount').value);
+  const currentBalance = Number((document.getElementById('balance').innerText || '0').replace(/,/g, ''));
+  if (amount > currentBalance) {
+    showAppPopup({ type: 'error', title: 'Insufficient Balance', message: 'You do not have enough balance for this withdrawal.' });
+    unlock();
+    return;
+  }
+  try {
+    const response = await fetch('/api/withdraw', {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({
+        method: document.getElementById('method')?.value,
+        account: document.getElementById('account')?.value,
+        accountName: document.getElementById('accountName')?.value,
+        accountDetails: document.getElementById('account')?.value,
+        amount,
+        pin: document.getElementById('pin')?.value
+      })
+    });
+    const result = await response.json();
+    if (response.ok && result.success !== false) {
+      showAppPopup({ type: 'success', title: 'Withdrawal Submitted', message: result.message || 'Withdrawal submitted successfully.' });
+      form.reset();
+      loadBalance();
+      loadWithdrawHistory();
+    } else {
+      showAppPopup({ type: 'error', title: 'Withdrawal Failed', message: result.message || 'Withdrawal failed.' });
+    }
+  } catch (error) {
+    console.error(error);
+    showAppPopup({ type: 'error', title: 'Connection Error', message: 'Unable to connect to server.' });
+  } finally {
+    unlock();
+  }
+});
+
+loadBalance();
+loadWithdrawHistory();
+</script>
+
+
+<div class="app-popup-overlay" id="appPopupOverlay">
+  <div class="app-popup success" id="appPopup">
+    <div class="brand">JAZTECH</div>
+    <div class="icon" id="appPopupIcon"><i class="fa-solid fa-check"></i></div>
+    <h3 id="appPopupTitle">Success</h3>
+    <p id="appPopupMessage">Done.</p>
+    <button type="button" class="ok-btn" id="appPopupOk">OK</button>
+  </div>
+</div>
+
+
+<script>
+(function(){
+  // Dark / light mode (default dark)
+  var darkPref = localStorage.getItem('jaz_dark_mode');
+  if (darkPref === '0') {
+    document.addEventListener('DOMContentLoaded', function(){
+      document.body.classList.add('light-mode');
+      document.body.style.background = '#f5f5f5';
+      document.body.style.color = '#111';
+    });
+  }
+
+  // Simple i18n
+  var LANG = localStorage.getItem('jaz_lang') || 'en';
+  var I18N = {
+    en: {
+      Home: 'Home', Orders: 'Orders', Team: 'Team', Me: 'Me',
+      Settings: 'Settings', Deposit: 'Deposit', Withdraw: 'Withdraw',
+      Login: 'Login', Register: 'Register', Logout: 'Logout',
+      'Total Balance': 'Total Balance', 'Total Profit': 'Total Profit',
+      'Active Investments': 'Active Investments', 'Referral Earnings': 'Referral Earnings',
+      'Investment Plans': 'Investment Plans', 'Invest Now': 'Invest Now',
+      Notifications: 'Notifications', Support: 'Support',
+      'Edit Profile': 'Edit Profile', 'Change Password': 'Change Password',
+      'Change Transaction PIN': 'Change Transaction PIN',
+      'Privacy Policy': 'Privacy Policy', 'Terms & Conditions': 'Terms & Conditions',
+      Account: 'Account', Security: 'Security', Preferences: 'Preferences', About: 'About',
+      'Dark Mode': 'Dark Mode', Language: 'Language'
+    },
+    sw: {
+      Home: 'Nyumbani', Orders: 'Oda', Team: 'Timu', Me: 'Mimi',
+      Settings: 'Mipangilio', Deposit: 'Weka Pesa', Withdraw: 'Toa Pesa',
+      Login: 'Ingia', Register: 'Jisajili', Logout: 'Toka',
+      'Total Balance': 'Salio Jumla', 'Total Profit': 'Faida Jumla',
+      'Active Investments': 'Uwekezaji Hai', 'Referral Earnings': 'Mapato ya Rufaa',
+      'Investment Plans': 'Mipango ya Uwekezaji', 'Invest Now': 'wekeza Sasa',
+      Notifications: 'Arifa', Support: 'Msaada',
+      'Edit Profile': 'Hariri Wasifu', 'Change Password': 'Badilisha Nenosiri',
+      'Change Transaction PIN': 'Badilisha PIN ya Muamala',
+      'Privacy Policy': 'Sera ya Faragha', 'Terms & Conditions': 'Sheria na Masharti',
+      Account: 'Akaunti', Security: 'Usalama', Preferences: 'Mapendeleo', About: 'Kuhusu',
+      'Dark Mode': 'Hali ya Giza', Language: 'Lugha'
+    },
+    fr: {
+      Home: 'Accueil', Orders: 'Ordres', Team: 'Équipe', Me: 'Moi',
+      Settings: 'Paramètres', Deposit: 'Dépôt', Withdraw: 'Retrait',
+      Login: 'Connexion', Register: "S'inscrire", Logout: 'Déconnexion',
+      'Total Balance': 'Solde total', 'Total Profit': 'Profit total',
+      'Active Investments': 'Investissements actifs', 'Referral Earnings': 'Gains de parrainage',
+      'Investment Plans': "Plans d'investissement", 'Invest Now': 'Investir',
+      Notifications: 'Notifications', Support: 'Support',
+      'Edit Profile': 'Modifier le profil', 'Change Password': 'Changer le mot de passe',
+      'Change Transaction PIN': 'Changer le PIN',
+      'Privacy Policy': 'Politique de confidentialité', 'Terms & Conditions': 'Conditions générales',
+      Account: 'Compte', Security: 'Sécurité', Preferences: 'Préférences', About: 'À propos',
+      'Dark Mode': 'Mode sombre', Language: 'Langue'
+    }
+  };
+
+  function applyLang(){
+    var dict = I18N[LANG] || I18N.en;
+    // elements with data-i18n
+    document.querySelectorAll('[data-i18n]').forEach(function(el){
+      var key = el.getAttribute('data-i18n');
+      if (dict[key]) el.textContent = dict[key];
+    });
+    // common nav / button text nodes (exact match)
+    var walk = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null);
+    var nodes = [];
+    while (walk.nextNode()) nodes.push(walk.currentNode);
+    nodes.forEach(function(node){
+      var t = (node.nodeValue || '').trim();
+      if (!t || t.length > 40) return;
+      if (dict[t]) {
+        node.nodeValue = node.nodeValue.replace(t, dict[t]);
+      }
+    });
+    document.documentElement.lang = LANG;
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyLang);
+  } else {
+    applyLang();
+  }
+
+  // Expose for settings page
+  window.JAZ_setLang = function(code){
+    localStorage.setItem('jaz_lang', code);
+    LANG = code;
+    location.reload();
+  };
+  window.JAZ_setDark = function(enabled){
+    localStorage.setItem('jaz_dark_mode', enabled ? '1' : '0');
+    location.reload();
+  };
+})();
+</script>
+
+</body>
+</html>

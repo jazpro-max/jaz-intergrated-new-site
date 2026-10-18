@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0">
+
+<title>Change Transaction PIN</title>
+
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Segoe UI,sans-serif;
+}
+
+body{
+background:#0b0f19;
+color:white;
+display:flex;
+justify-content:center;
+align-items:center;
+min-height:100vh;
+padding:20px;
+}
+
+.container{
+width:100%;
+max-width:420px;
+background:#161d2d;
+padding:30px;
+border-radius:20px;
+box-shadow:0 10px 30px rgba(0,0,0,.4);
+}
+
+h2{
+text-align:center;
+margin-bottom:25px;
+color:#f59e0b;
+}
+
+.form-group{
+margin-bottom:18px;
+}
+
+.form-group label{
+display:block;
+margin-bottom:8px;
+}
+
+.pin-box{
+position:relative;
+}
+
+.pin-box input{
+width:100%;
+padding:14px;
+background:#20293d;
+border:none;
+border-radius:10px;
+color:white;
+font-size:20px;
+letter-spacing:8px;
+text-align:center;
+}
+
+.pin-box i{
+position:absolute;
+right:15px;
+top:15px;
+cursor:pointer;
+color:#9ca3af;
+}
+
+small{
+display:block;
+margin-top:8px;
+color:#9ca3af;
+}
+
+button{
+width:100%;
+padding:15px;
+background:#f59e0b;
+border:none;
+border-radius:10px;
+font-size:16px;
+font-weight:bold;
+cursor:pointer;
+margin-top:10px;
+}
+
+button:hover{
+background:#ffb300;
+}
+
+.message{
+margin-top:15px;
+text-align:center;
+font-weight:bold;
+color:#10b981;
+}
+
+
+/* ===== Custom App Popup ===== */
+.app-popup-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.72);
+  display:none;align-items:center;justify-content:center;
+  z-index:99999;padding:20px;
+  backdrop-filter:blur(4px);
+}
+.app-popup-overlay.open{display:flex;animation:appPopupFade .2s ease;}
+@keyframes appPopupFade{from{opacity:0}to{opacity:1}}
+.app-popup{
+  background:#161d2d;border:1px solid #2a3548;border-radius:18px;
+  width:100%;max-width:340px;padding:28px 24px 22px;
+  text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.55);
+  animation:appPopupUp .25s ease;
+}
+@keyframes appPopupUp{from{transform:translateY(12px);opacity:0}to{transform:none;opacity:1}}
+.app-popup .brand{
+  font-size:.75rem;font-weight:700;letter-spacing:.12em;
+  color:#f59e0b;text-transform:uppercase;margin-bottom:14px;
+}
+.app-popup .icon{
+  width:56px;height:56px;border-radius:50%;margin:0 auto 14px;
+  display:flex;align-items:center;justify-content:center;font-size:1.5rem;
+}
+.app-popup.success .icon{background:rgba(16,185,129,.15);color:#10b981;}
+.app-popup.error .icon{background:rgba(239,68,68,.15);color:#ef4444;}
+.app-popup.info .icon{background:rgba(245,158,11,.15);color:#f59e0b;}
+.app-popup h3{color:#fff;font-size:1.15rem;margin-bottom:8px;font-weight:600;}
+.app-popup p{color:#9ca3af;font-size:.9rem;line-height:1.45;margin-bottom:20px;}
+.app-popup .ok-btn{
+  width:100%;padding:12px;border:none;border-radius:10px;
+  background:#f59e0b;color:#111;font-weight:700;font-size:.95rem;
+  cursor:pointer;font-family:inherit;
+}
+.app-popup .ok-btn:hover{background:#d97706;}
+.app-popup .ok-btn:disabled{opacity:.7;cursor:not-allowed;}
+
+
+body.light-mode{background:#f5f5f5 !important;color:#111 !important;}
+body.light-mode .card,
+body.light-mode .login-box,
+body.light-mode .register-box,
+body.light-mode .metric-card,
+body.light-mode .table-wrap,
+body.light-mode .sidebar,
+body.light-mode header,
+body.light-mode .header,
+body.light-mode .bottom-nav,
+body.light-mode .topbar{background:#fff !important;color:#111 !important;border-color:#e5e7eb !important;}
+body.light-mode a{color:inherit;}
+body.light-mode input, body.light-mode select, body.light-mode textarea{
+  background:#f3f4f6 !important;color:#111 !important;border-color:#d1d5db !important;
+}
+body.light-mode .item{color:#111 !important;border-color:#e5e7eb !important;}
+body.light-mode .section-title, body.light-mode h1, body.light-mode h2, body.light-mode h3{color:#b45309 !important;}
+body.light-mode .right, body.light-mode .muted{color:#6b7280 !important;}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h2>Change Transaction PIN</h2>
+
+<form id="pinForm">
+
+<div class="form-group">
+
+<label>Current PIN</label>
+
+<div class="pin-box">
+
+<input
+type="password"
+id="currentPin"
+inputmode="numeric"
+maxlength="6"
+required>
+
+<i class="fa-solid fa-eye toggle"></i>
+
+</div>
+
+</div>
+
+<div class="form-group">
+
+<label>New PIN</label>
+
+<div class="pin-box">
+
+<input
+type="password"
+id="newPin"
+inputmode="numeric"
+maxlength="6"
+required>
+
+<i class="fa-solid fa-eye toggle"></i>
+
+</div>
+
+<small>Use a 4-digit or 6-digit PIN.</small>
+
+</div>
+
+<div class="form-group">
+
+<label>Confirm New PIN</label>
+
+<div class="pin-box">
+
+<input
+type="password"
+id="confirmPin"
+inputmode="numeric"
+maxlength="6"
+required>
+
+<i class="fa-solid fa-eye toggle"></i>
+
+</div>
+
+</div>
+
+<button type="submit">
+
+Update PIN
+
+</button>
+
+<div class="message" id="message"></div>
+
+</form>
+
+</div>
+<script>
+
+function showAppPopup(options){
+  const opts = typeof options === 'string' ? { message: options, type: 'info' } : (options || {});
+  const type = opts.type || 'info';
+  const title = opts.title || (type === 'success' ? 'Success' : type === 'error' ? 'Error' : 'Notice');
+  const message = opts.message || '';
+  const onOk = opts.onOk || null;
+  let overlay = document.getElementById('appPopupOverlay');
+  if (!overlay) {
+    document.body.insertAdjacentHTML('beforeend', `
+<div class="app-popup-overlay" id="appPopupOverlay">
+  <div class="app-popup success" id="appPopup">
+    <div class="brand">JAZTECH</div>
+    <div class="icon" id="appPopupIcon"><i class="fa-solid fa-check"></i></div>
+    <h3 id="appPopupTitle">Success</h3>
+    <p id="appPopupMessage">Done.</p>
+    <button type="button" class="ok-btn" id="appPopupOk">OK</button>
+  </div>
+</div>
+`);
+    overlay = document.getElementById('appPopupOverlay');
+  }
+  const box = document.getElementById('appPopup');
+  const icon = document.getElementById('appPopupIcon');
+  const titleEl = document.getElementById('appPopupTitle');
+  const msgEl = document.getElementById('appPopupMessage');
+  const okBtn = document.getElementById('appPopupOk');
+  box.className = 'app-popup ' + type;
+  if (type === 'success') icon.innerHTML = '<i class="fa-solid fa-check"></i>';
+  else if (type === 'error') icon.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+  else icon.innerHTML = '<i class="fa-solid fa-circle-info"></i>';
+  titleEl.textContent = title;
+  msgEl.textContent = message;
+  overlay.classList.add('open');
+  okBtn.onclick = function(){
+    overlay.classList.remove('open');
+    if (typeof onOk === 'function') onOk();
+  };
+}
+// Prevent double-submit on forms
+function lockButton(btn, loadingText){
+  if (!btn) return function unlock(){};
+  if (btn.dataset.locked === '1') return null; // already locked
+  btn.dataset.locked = '1';
+  btn.dataset.prevText = btn.innerHTML;
+  btn.disabled = true;
+  btn.style.opacity = '0.7';
+  btn.style.cursor = 'not-allowed';
+  if (loadingText) btn.innerHTML = loadingText;
+  return function unlock(){
+    btn.dataset.locked = '0';
+    btn.disabled = false;
+    btn.style.opacity = '';
+    btn.style.cursor = '';
+    btn.innerHTML = btn.dataset.prevText || btn.innerHTML;
+  };
+}
+
+
+
+// ===============================
+// Show / Hide PIN
+// ===============================
+
+document.querySelectorAll(".toggle").forEach(icon=>{
+
+icon.addEventListener("click",()=>{
+
+const input=icon.previousElementSibling;
+
+if(input.type==="password"){
+
+input.type="text";
+
+icon.classList.replace("fa-eye","fa-eye-slash");
+
+}else{
+
+input.type="password";
+
+icon.classList.replace("fa-eye-slash","fa-eye");
+
+}
+
+});
+
+});
+
+// ===============================
+// Allow Numbers Only
+// ===============================
+
+["currentPin","newPin","confirmPin"].forEach(id=>{
+
+document.getElementById(id)
+
+.addEventListener("input",function(){
+
+this.value=this.value.replace(/\D/g,"");
+
+});
+
+});
+
+// ===============================
+// Submit Form
+// ===============================
+
+document.getElementById("pinForm")
+
+.addEventListener("submit",async function(e){
+
+e.preventDefault();
+
+const currentPin=
+
+document.getElementById("currentPin").value;
+
+const newPin=
+
+document.getElementById("newPin").value;
+
+const confirmPin=
+
+document.getElementById("confirmPin").value;
+
+// Validate PIN length
+
+if(!(newPin.length===4 || newPin.length===6)){
+
+showAppPopup({ type: 'error', title: 'Error', message: 'PIN must contain exactly 4 or 6 digits.' });
+
+return;
+
+}
+
+// Confirm PIN
+
+if(newPin!==confirmPin){
+
+showAppPopup({ type: 'info', title: 'Notice', message: 'PINs do not match.' });
+
+return;
+
+}
+
+// Prevent same PIN
+
+if(currentPin===newPin){
+
+showAppPopup({ type: 'error', title: 'Error', message: 'New PIN must be different from the current PIN.' });
+
+return;
+
+}
+
+try{
+
+const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+if (!token) { window.location.href = 'login.html'; return; }
+const response=await fetch("/api/change-pin",{
+method:"POST",
+headers:{
+"Content-Type":"application/json",
+"Authorization": "Bearer " + token
+},
+body:JSON.stringify({
+currentPin,
+newPin
+})
+});
+const result=await response.json();
+if(response.ok && result.success !== false){
+showAppPopup({ type: 'success', title: 'PIN Updated', message: result.message || 'Transaction PIN updated successfully.' });
+document.getElementById("pinForm").reset();
+}else{
+showAppPopup({ type: 'error', title: 'Failed', message: result.message || 'Failed to update PIN.' });
+}
+
+}catch(error){
+
+console.error(error);
+
+showAppPopup({ type: 'error', title: 'Error', message: 'Unable to connect to the server.' });
+
+}
+
+});
+
+</script>
+
+
+<div class="app-popup-overlay" id="appPopupOverlay">
+  <div class="app-popup success" id="appPopup">
+    <div class="brand">JAZTECH</div>
+    <div class="icon" id="appPopupIcon"><i class="fa-solid fa-check"></i></div>
+    <h3 id="appPopupTitle">Success</h3>
+    <p id="appPopupMessage">Done.</p>
+    <button type="button" class="ok-btn" id="appPopupOk">OK</button>
+  </div>
+</div>
+
+
+<script>
+(function(){
+  // Dark / light mode (default dark)
+  var darkPref = localStorage.getItem('jaz_dark_mode');
+  if (darkPref === '0') {
+    document.addEventListener('DOMContentLoaded', function(){
+      document.body.classList.add('light-mode');
+      document.body.style.background = '#f5f5f5';
+      document.body.style.color = '#111';
+    });
+  }
+
+  // Simple i18n
+  var LANG = localStorage.getItem('jaz_lang') || 'en';
+  var I18N = {
+    en: {
+      Home: 'Home', Orders: 'Orders', Team: 'Team', Me: 'Me',
+      Settings: 'Settings', Deposit: 'Deposit', Withdraw: 'Withdraw',
+      Login: 'Login', Register: 'Register', Logout: 'Logout',
+      'Total Balance': 'Total Balance', 'Total Profit': 'Total Profit',
+      'Active Investments': 'Active Investments', 'Referral Earnings': 'Referral Earnings',
+      'Investment Plans': 'Investment Plans', 'Invest Now': 'Invest Now',
+      Notifications: 'Notifications', Support: 'Support',
+      'Edit Profile': 'Edit Profile', 'Change Password': 'Change Password',
+      'Change Transaction PIN': 'Change Transaction PIN',
+      'Privacy Policy': 'Privacy Policy', 'Terms & Conditions': 'Terms & Conditions',
+      Account: 'Account', Security: 'Security', Preferences: 'Preferences', About: 'About',
+      'Dark Mode': 'Dark Mode', Language: 'Language'
+    },
+    sw: {
+      Home: 'Nyumbani', Orders: 'Oda', Team: 'Timu', Me: 'Mimi',
+      Settings: 'Mipangilio', Deposit: 'Weka Pesa', Withdraw: 'Toa Pesa',
+      Login: 'Ingia', Register: 'Jisajili', Logout: 'Toka',
+      'Total Balance': 'Salio Jumla', 'Total Profit': 'Faida Jumla',
+      'Active Investments': 'Uwekezaji Hai', 'Referral Earnings': 'Mapato ya Rufaa',
+      'Investment Plans': 'Mipango ya Uwekezaji', 'Invest Now': 'wekeza Sasa',
+      Notifications: 'Arifa', Support: 'Msaada',
+      'Edit Profile': 'Hariri Wasifu', 'Change Password': 'Badilisha Nenosiri',
+      'Change Transaction PIN': 'Badilisha PIN ya Muamala',
+      'Privacy Policy': 'Sera ya Faragha', 'Terms & Conditions': 'Sheria na Masharti',
+      Account: 'Akaunti', Security: 'Usalama', Preferences: 'Mapendeleo', About: 'Kuhusu',
+      'Dark Mode': 'Hali ya Giza', Language: 'Lugha'
+    },
+    fr: {
+      Home: 'Accueil', Orders: 'Ordres', Team: 'Équipe', Me: 'Moi',
+      Settings: 'Paramètres', Deposit: 'Dépôt', Withdraw: 'Retrait',
+      Login: 'Connexion', Register: "S'inscrire", Logout: 'Déconnexion',
+      'Total Balance': 'Solde total', 'Total Profit': 'Profit total',
+      'Active Investments': 'Investissements actifs', 'Referral Earnings': 'Gains de parrainage',
+      'Investment Plans': "Plans d'investissement", 'Invest Now': 'Investir',
+      Notifications: 'Notifications', Support: 'Support',
+      'Edit Profile': 'Modifier le profil', 'Change Password': 'Changer le mot de passe',
+      'Change Transaction PIN': 'Changer le PIN',
+      'Privacy Policy': 'Politique de confidentialité', 'Terms & Conditions': 'Conditions générales',
+      Account: 'Compte', Security: 'Sécurité', Preferences: 'Préférences', About: 'À propos',
+      'Dark Mode': 'Mode sombre', Language: 'Langue'
+    }
+  };
+
+  function applyLang(){
+    var dict = I18N[LANG] || I18N.en;
+    // elements with data-i18n
+    document.querySelectorAll('[data-i18n]').forEach(function(el){
+      var key = el.getAttribute('data-i18n');
+      if (dict[key]) el.textContent = dict[key];
+    });
+    // common nav / button text nodes (exact match)
+    var walk = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null);
+    var nodes = [];
+    while (walk.nextNode()) nodes.push(walk.currentNode);
+    nodes.forEach(function(node){
+      var t = (node.nodeValue || '').trim();
+      if (!t || t.length > 40) return;
+      if (dict[t]) {
+        node.nodeValue = node.nodeValue.replace(t, dict[t]);
+      }
+    });
+    document.documentElement.lang = LANG;
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyLang);
+  } else {
+    applyLang();
+  }
+
+  // Expose for settings page
+  window.JAZ_setLang = function(code){
+    localStorage.setItem('jaz_lang', code);
+    LANG = code;
+    location.reload();
+  };
+  window.JAZ_setDark = function(enabled){
+    localStorage.setItem('jaz_dark_mode', enabled ? '1' : '0');
+    location.reload();
+  };
+})();
+</script>
+
+</body>
+
+</html>
