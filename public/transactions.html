@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0">
+
+<title>Transaction History</title>
+
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Segoe UI,sans-serif;
+}
+
+body{
+background:#0b0f19;
+color:white;
+padding-bottom:90px;
+}
+
+header{
+
+background:#111827;
+padding:18px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+position:sticky;
+top:0;
+border-bottom:1px solid #222;
+z-index:100;
+
+}
+
+header h2{
+
+color:#f59e0b;
+
+}
+
+.container{
+
+max-width:800px;
+margin:auto;
+padding:16px;
+
+}
+
+.summary{
+
+display:grid;
+grid-template-columns:repeat(2,1fr);
+gap:15px;
+margin-bottom:18px;
+
+}
+
+.card{
+
+background:#161d2d;
+padding:18px;
+border-radius:16px;
+
+}
+
+.card p{
+
+color:#9ca3af;
+
+}
+
+.card h2{
+
+margin-top:8px;
+color:#f59e0b;
+
+}
+
+.filter{
+
+display:flex;
+gap:10px;
+margin-bottom:18px;
+
+}
+
+.filter input{
+
+flex:1;
+padding:12px;
+border-radius:10px;
+border:none;
+background:#20293d;
+color:white;
+
+}
+
+.filter select{
+
+padding:12px;
+border:none;
+border-radius:10px;
+background:#20293d;
+color:white;
+
+}
+
+.transaction{
+
+background:#161d2d;
+padding:18px;
+border-radius:15px;
+margin-bottom:15px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+
+}
+
+.left h3{
+
+margin-bottom:5px;
+
+}
+
+.left p{
+
+color:#9ca3af;
+font-size:14px;
+
+}
+
+.amount{
+
+font-size:18px;
+font-weight:bold;
+
+}
+
+.credit{
+
+color:#10b981;
+
+}
+
+.debit{
+
+color:#ef4444;
+
+}
+
+.status{
+
+margin-top:6px;
+font-size:12px;
+padding:4px 10px;
+border-radius:20px;
+display:inline-block;
+
+}
+
+.completed{
+
+background:#10b981;
+
+}
+
+.pending{
+
+background:#f59e0b;
+color:black;
+
+}
+
+.failed{
+
+background:#ef4444;
+
+}
+
+.bottom-nav{
+
+position:fixed;
+bottom:0;
+left:0;
+width:100%;
+background:#111827;
+display:flex;
+justify-content:space-around;
+padding:12px 0;
+
+}
+
+.bottom-nav a{
+
+display:flex;
+flex-direction:column;
+align-items:center;
+text-decoration:none;
+color:#9ca3af;
+font-size:13px;
+
+}
+
+.bottom-nav a.active{
+
+color:#f59e0b;
+
+}
+
+
+/* ===== Custom App Popup ===== */
+.app-popup-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.72);
+  display:none;align-items:center;justify-content:center;
+  z-index:99999;padding:20px;
+  backdrop-filter:blur(4px);
+}
+.app-popup-overlay.open{display:flex;animation:appPopupFade .2s ease;}
+@keyframes appPopupFade{from{opacity:0}to{opacity:1}}
+.app-popup{
+  background:#161d2d;border:1px solid #2a3548;border-radius:18px;
+  width:100%;max-width:340px;padding:28px 24px 22px;
+  text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.55);
+  animation:appPopupUp .25s ease;
+}
+@keyframes appPopupUp{from{transform:translateY(12px);opacity:0}to{transform:none;opacity:1}}
+.app-popup .brand{
+  font-size:.75rem;font-weight:700;letter-spacing:.12em;
+  color:#f59e0b;text-transform:uppercase;margin-bottom:14px;
+}
+.app-popup .icon{
+  width:56px;height:56px;border-radius:50%;margin:0 auto 14px;
+  display:flex;align-items:center;justify-content:center;font-size:1.5rem;
+}
+.app-popup.success .icon{background:rgba(16,185,129,.15);color:#10b981;}
+.app-popup.error .icon{background:rgba(239,68,68,.15);color:#ef4444;}
+.app-popup.info .icon{background:rgba(245,158,11,.15);color:#f59e0b;}
+.app-popup h3{color:#fff;font-size:1.15rem;margin-bottom:8px;font-weight:600;}
+.app-popup p{color:#9ca3af;font-size:.9rem;line-height:1.45;margin-bottom:20px;}
+.app-popup .ok-btn{
+  width:100%;padding:12px;border:none;border-radius:10px;
+  background:#f59e0b;color:#111;font-weight:700;font-size:.95rem;
+  cursor:pointer;font-family:inherit;
+}
+.app-popup .ok-btn:hover{background:#d97706;}
+.app-popup .ok-btn:disabled{opacity:.7;cursor:not-allowed;}
+
+</style>
+
+</head>
+
+<body>
+
+<header>
+
+<h2>Transactions</h2>
+
+<i class="fa-solid fa-clock-rotate-left fa-lg"></i>
+
+</header>
+
+<div class="container">
+
+<div class="summary">
+
+<div class="card">
+
+<p>Total Credits</p>
+
+<h2 id="credits">
+
+UGX 0
+
+</h2>
+
+</div>
+
+<div class="card">
+
+<p>Total Debits</p>
+
+<h2 id="debits">
+
+UGX 0
+
+</h2>
+
+</div>
+
+</div>
+
+<div class="filter">
+
+<input
+type="text"
+id="search"
+placeholder="Search transaction">
+
+<select id="filter">
+
+<option value="All">
+
+All
+
+</option>
+
+<option value="Deposit">
+
+Deposit
+
+</option>
+
+<option value="Withdrawal">
+
+Withdrawal
+
+</option>
+
+<option value="Investment">
+
+Investment
+
+</option>
+
+<option value="Commission">
+
+Commission
+
+</option>
+
+<option value="Profit">
+
+Profit
+
+</option>
+
+</select>
+
+</div>
+
+<div id="transactionList">
+
+</div>
+
+</div>
+<!-- Bottom Navigation -->
+
+<nav class="bottom-nav">
+
+<a href="index.html">
+
+<i class="fa-solid fa-house"></i>
+
+<span>Home</span>
+
+</a>
+
+<a href="order.html">
+
+<i class="fa-solid fa-chart-line"></i>
+
+<span>Orders</span>
+
+</a>
+
+<a href="team.html">
+
+<i class="fa-solid fa-users"></i>
+
+<span>Team</span>
+
+</a>
+
+<a href="me.html" class="active">
+
+<i class="fa-solid fa-user"></i>
+
+<span>Me</span>
+
+</a>
+
+</nav>
+
+<script>
+
+function showAppPopup(options){
+  const opts = typeof options === 'string' ? { message: options, type: 'info' } : (options || {});
+  const type = opts.type || 'info';
+  const title = opts.title || (type === 'success' ? 'Success' : type === 'error' ? 'Error' : 'Notice');
+  const message = opts.message || '';
+  const onOk = opts.onOk || null;
+  let overlay = document.getElementById('appPopupOverlay');
+  if (!overlay) {
+    document.body.insertAdjacentHTML('beforeend', `
+<div class="app-popup-overlay" id="appPopupOverlay">
+  <div class="app-popup success" id="appPopup">
+    <div class="brand">JAZTECH</div>
+    <div class="icon" id="appPopupIcon"><i class="fa-solid fa-check"></i></div>
+    <h3 id="appPopupTitle">Success</h3>
+    <p id="appPopupMessage">Done.</p>
+    <button type="button" class="ok-btn" id="appPopupOk">OK</button>
+  </div>
+</div>
+`);
+    overlay = document.getElementById('appPopupOverlay');
+  }
+  const box = document.getElementById('appPopup');
+  const icon = document.getElementById('appPopupIcon');
+  const titleEl = document.getElementById('appPopupTitle');
+  const msgEl = document.getElementById('appPopupMessage');
+  const okBtn = document.getElementById('appPopupOk');
+  box.className = 'app-popup ' + type;
+  if (type === 'success') icon.innerHTML = '<i class="fa-solid fa-check"></i>';
+  else if (type === 'error') icon.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+  else icon.innerHTML = '<i class="fa-solid fa-circle-info"></i>';
+  titleEl.textContent = title;
+  msgEl.textContent = message;
+  overlay.classList.add('open');
+  okBtn.onclick = function(){
+    overlay.classList.remove('open');
+    if (typeof onOk === 'function') onOk();
+  };
+}
+// Prevent double-submit on forms
+function lockButton(btn, loadingText){
+  if (!btn) return function unlock(){};
+  if (btn.dataset.locked === '1') return null; // already locked
+  btn.dataset.locked = '1';
+  btn.dataset.prevText = btn.innerHTML;
+  btn.disabled = true;
+  btn.style.opacity = '0.7';
+  btn.style.cursor = 'not-allowed';
+  if (loadingText) btn.innerHTML = loadingText;
+  return function unlock(){
+    btn.dataset.locked = '0';
+    btn.disabled = false;
+    btn.style.opacity = '';
+    btn.style.cursor = '';
+    btn.innerHTML = btn.dataset.prevText || btn.innerHTML;
+  };
+}
+
+
+
+let allTransactions=[];
+
+function getToken(){return localStorage.getItem('token')||sessionStorage.getItem('token');}
+async function loadTransactions(){
+try{
+  const token = getToken();
+  if (!token) { window.location.href = 'login.html'; return; }
+  const response = await fetch("/api/transactions", {
+    headers: { 'Authorization': 'Bearer ' + token }
+  });
+  if (response.status === 401) { window.location.href = 'login.html'; return; }
+  const payload = await response.json();
+  const data = payload.transactions || payload || [];
+  allTransactions = Array.isArray(data) ? data : [];
+  renderTransactions(allTransactions);
+}catch(error){
+  console.error(error);
+  showAppPopup({ type: 'error', title: 'Error', message: 'Unable to load transactions.' });
+}
+}
+
+function renderTransactions(list){
+
+const container=document.getElementById("transactionList");
+
+container.innerHTML="";
+
+let credits=0;
+
+let debits=0;
+
+if(list.length===0){
+
+container.innerHTML=`
+
+<div class="transaction">
+
+<div class="left">
+
+<h3>No Transactions</h3>
+
+<p>Your transaction history is empty.</p>
+
+</div>
+
+</div>
+
+`;
+
+document.getElementById("credits").innerText="UGX 0";
+
+document.getElementById("debits").innerText="UGX 0";
+
+return;
+
+}
+
+list.forEach(item=>{
+  const t = String(item.type || '').toLowerCase();
+  const isCredit = t === 'deposit' || t === 'commission' || t === 'profit';
+  if (isCredit) credits += Number(item.amount || 0);
+  else debits += Number(item.amount || 0);
+
+  const amountClass = isCredit ? 'credit' : 'debit';
+  const st = String(item.status || 'completed').toLowerCase();
+  let statusClass = 'completed';
+  if (st === 'pending') statusClass = 'pending';
+  if (st === 'rejected' || st === 'failed') statusClass = 'failed';
+
+  const desc = item.note || item.description || item.method || '';
+  const dateStr = item.createdAt || item.created_at || item.date;
+  const dateFmt = dateStr ? new Date(dateStr).toLocaleString() : '';
+
+  container.innerHTML += `
+<div class="transaction">
+  <div class="left">
+    <h3>${item.type || '—'}</h3>
+    <p>${desc}</p>
+    <p>${dateFmt}</p>
+    <span class="status ${statusClass}">${item.status || '—'}</span>
+  </div>
+  <div>
+    <div class="amount ${amountClass}">
+      ${isCredit ? '+' : '-'} UGX ${Number(item.amount || 0).toLocaleString()}
+    </div>
+  </div>
+</div>`;
+});
+
+document.getElementById("credits").innerText=
+"UGX "+credits.toLocaleString();
+
+document.getElementById("debits").innerText=
+"UGX "+debits.toLocaleString();
+
+}
+
+document.getElementById("search")
+.addEventListener("keyup",filterTransactions);
+
+document.getElementById("filter")
+.addEventListener("change",filterTransactions);
+
+function filterTransactions(){
+
+const keyword=
+document.getElementById("search")
+.value.toLowerCase();
+
+const type=
+document.getElementById("filter")
+.value;
+
+const filtered=
+allTransactions.filter(item=>{
+
+const desc = String(item.note || item.description || item.method || '').toLowerCase();
+const typ = String(item.type || '').toLowerCase();
+const matchesKeyword = !keyword || desc.includes(keyword) || typ.includes(keyword);
+const matchesType = type === 'All' || typ === String(type).toLowerCase();
+
+return matchesKeyword&&matchesType;
+
+});
+
+renderTransactions(filtered);
+
+}
+
+loadTransactions();
+
+</script>
+
+
+<div class="app-popup-overlay" id="appPopupOverlay">
+  <div class="app-popup success" id="appPopup">
+    <div class="brand">JAZTECH</div>
+    <div class="icon" id="appPopupIcon"><i class="fa-solid fa-check"></i></div>
+    <h3 id="appPopupTitle">Success</h3>
+    <p id="appPopupMessage">Done.</p>
+    <button type="button" class="ok-btn" id="appPopupOk">OK</button>
+  </div>
+</div>
+
+</body>
+
+</html>

@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0">
+
+<title>Edit Profile</title>
+
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Segoe UI,sans-serif;
+}
+
+body{
+background:#0b0f19;
+color:white;
+padding:20px;
+padding-bottom:90px;
+}
+
+.container{
+max-width:600px;
+margin:auto;
+}
+
+h2{
+text-align:center;
+margin-bottom:20px;
+color:#f59e0b;
+}
+
+.profile-image{
+text-align:center;
+margin-bottom:25px;
+}
+
+.profile-image img{
+width:120px;
+height:120px;
+border-radius:50%;
+object-fit:cover;
+border:4px solid #f59e0b;
+}
+
+.profile-image input{
+display:none;
+}
+
+.profile-image label{
+display:inline-block;
+margin-top:12px;
+padding:10px 20px;
+background:#f59e0b;
+color:black;
+border-radius:8px;
+cursor:pointer;
+font-weight:bold;
+}
+
+.form-group{
+margin-bottom:18px;
+}
+
+.form-group label{
+display:block;
+margin-bottom:6px;
+}
+
+.form-group input{
+width:100%;
+padding:14px;
+border:none;
+border-radius:10px;
+background:#20293d;
+color:white;
+}
+
+button{
+width:100%;
+padding:15px;
+background:#f59e0b;
+border:none;
+border-radius:12px;
+font-size:16px;
+font-weight:bold;
+cursor:pointer;
+}
+
+button:hover{
+background:#ffb300;
+}
+
+
+/* ===== Custom App Popup ===== */
+.app-popup-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.72);
+  display:none;align-items:center;justify-content:center;
+  z-index:99999;padding:20px;
+  backdrop-filter:blur(4px);
+}
+.app-popup-overlay.open{display:flex;animation:appPopupFade .2s ease;}
+@keyframes appPopupFade{from{opacity:0}to{opacity:1}}
+.app-popup{
+  background:#161d2d;border:1px solid #2a3548;border-radius:18px;
+  width:100%;max-width:340px;padding:28px 24px 22px;
+  text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.55);
+  animation:appPopupUp .25s ease;
+}
+@keyframes appPopupUp{from{transform:translateY(12px);opacity:0}to{transform:none;opacity:1}}
+.app-popup .brand{
+  font-size:.75rem;font-weight:700;letter-spacing:.12em;
+  color:#f59e0b;text-transform:uppercase;margin-bottom:14px;
+}
+.app-popup .icon{
+  width:56px;height:56px;border-radius:50%;margin:0 auto 14px;
+  display:flex;align-items:center;justify-content:center;font-size:1.5rem;
+}
+.app-popup.success .icon{background:rgba(16,185,129,.15);color:#10b981;}
+.app-popup.error .icon{background:rgba(239,68,68,.15);color:#ef4444;}
+.app-popup.info .icon{background:rgba(245,158,11,.15);color:#f59e0b;}
+.app-popup h3{color:#fff;font-size:1.15rem;margin-bottom:8px;font-weight:600;}
+.app-popup p{color:#9ca3af;font-size:.9rem;line-height:1.45;margin-bottom:20px;}
+.app-popup .ok-btn{
+  width:100%;padding:12px;border:none;border-radius:10px;
+  background:#f59e0b;color:#111;font-weight:700;font-size:.95rem;
+  cursor:pointer;font-family:inherit;
+}
+.app-popup .ok-btn:hover{background:#d97706;}
+.app-popup .ok-btn:disabled{opacity:.7;cursor:not-allowed;}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h2>Edit Profile</h2>
+
+<div class="profile-image">
+
+<img
+src="https://via.placeholder.com/120"
+id="preview">
+
+<br>
+
+<label for="photo">
+
+<i class="fa-solid fa-camera"></i>
+
+Change Photo
+
+</label>
+
+<input
+type="file"
+id="photo"
+accept="image/*">
+
+</div>
+
+<form id="profileForm">
+
+<div class="form-group">
+
+<label>Full Name</label>
+
+<input
+type="text"
+id="name"
+required>
+
+</div>
+
+<div class="form-group">
+
+<label>Email</label>
+
+<input
+type="email"
+id="email"
+required>
+
+</div>
+
+<div class="form-group">
+
+<label>Phone Number</label>
+
+<input
+type="tel"
+id="phone"
+required>
+
+</div>
+
+<div class="form-group">
+
+<label>Country</label>
+
+<input
+type="text"
+id="country">
+
+</div>
+
+<div class="form-group">
+
+<label>City</label>
+
+<input
+type="text"
+id="city">
+
+</div>
+
+<div class="form-group">
+
+<label>Address</label>
+
+<input
+type="text"
+id="address">
+
+</div>
+
+<button type="submit">
+
+Save Changes
+
+</button>
+
+</form>
+
+</div>
+<script>
+
+function showAppPopup(options){
+  const opts = typeof options === 'string' ? { message: options, type: 'info' } : (options || {});
+  const type = opts.type || 'info';
+  const title = opts.title || (type === 'success' ? 'Success' : type === 'error' ? 'Error' : 'Notice');
+  const message = opts.message || '';
+  const onOk = opts.onOk || null;
+  let overlay = document.getElementById('appPopupOverlay');
+  if (!overlay) {
+    document.body.insertAdjacentHTML('beforeend', `
+<div class="app-popup-overlay" id="appPopupOverlay">
+  <div class="app-popup success" id="appPopup">
+    <div class="brand">JAZTECH</div>
+    <div class="icon" id="appPopupIcon"><i class="fa-solid fa-check"></i></div>
+    <h3 id="appPopupTitle">Success</h3>
+    <p id="appPopupMessage">Done.</p>
+    <button type="button" class="ok-btn" id="appPopupOk">OK</button>
+  </div>
+</div>
+`);
+    overlay = document.getElementById('appPopupOverlay');
+  }
+  const box = document.getElementById('appPopup');
+  const icon = document.getElementById('appPopupIcon');
+  const titleEl = document.getElementById('appPopupTitle');
+  const msgEl = document.getElementById('appPopupMessage');
+  const okBtn = document.getElementById('appPopupOk');
+  box.className = 'app-popup ' + type;
+  if (type === 'success') icon.innerHTML = '<i class="fa-solid fa-check"></i>';
+  else if (type === 'error') icon.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+  else icon.innerHTML = '<i class="fa-solid fa-circle-info"></i>';
+  titleEl.textContent = title;
+  msgEl.textContent = message;
+  overlay.classList.add('open');
+  okBtn.onclick = function(){
+    overlay.classList.remove('open');
+    if (typeof onOk === 'function') onOk();
+  };
+}
+// Prevent double-submit on forms
+function lockButton(btn, loadingText){
+  if (!btn) return function unlock(){};
+  if (btn.dataset.locked === '1') return null; // already locked
+  btn.dataset.locked = '1';
+  btn.dataset.prevText = btn.innerHTML;
+  btn.disabled = true;
+  btn.style.opacity = '0.7';
+  btn.style.cursor = 'not-allowed';
+  if (loadingText) btn.innerHTML = loadingText;
+  return function unlock(){
+    btn.dataset.locked = '0';
+    btn.disabled = false;
+    btn.style.opacity = '';
+    btn.style.cursor = '';
+    btn.innerHTML = btn.dataset.prevText || btn.innerHTML;
+  };
+}
+
+
+
+// Preview selected profile picture
+document.getElementById("photo").addEventListener("change", function () {
+
+    const file = this.files[0];
+
+    if (file) {
+
+        document.getElementById("preview").src =
+            URL.createObjectURL(file);
+
+    }
+
+});
+
+// Load current user profile
+async function loadProfile() {
+
+    try {
+
+        const response = await fetch("/api/profile");
+
+        const user = await response.json();
+
+        document.getElementById("name").value = user.name || "";
+
+        document.getElementById("email").value = user.email || "";
+
+        document.getElementById("phone").value = user.phone || "";
+
+        document.getElementById("country").value = user.country || "";
+
+        document.getElementById("city").value = user.city || "";
+
+        document.getElementById("address").value = user.address || "";
+
+        if (user.photo) {
+
+            document.getElementById("preview").src = user.photo;
+
+        }
+
+    } catch (error) {
+
+        console.error(error);
+
+        showAppPopup({ type: 'error', title: 'Error', message: 'Unable to load profile.' });
+
+    }
+
+}
+
+// Save profile
+document.getElementById("profileForm")
+.addEventListener("submit", async function (e) {
+
+    e.preventDefault();
+
+    const formData = new FormData();
+
+    formData.append("name",
+        document.getElementById("name").value);
+
+    formData.append("email",
+        document.getElementById("email").value);
+
+    formData.append("phone",
+        document.getElementById("phone").value);
+
+    formData.append("country",
+        document.getElementById("country").value);
+
+    formData.append("city",
+        document.getElementById("city").value);
+
+    formData.append("address",
+        document.getElementById("address").value);
+
+    const photo =
+        document.getElementById("photo").files[0];
+
+    if (photo) {
+
+        formData.append("photo", photo);
+
+    }
+
+    try {
+
+        const response = await fetch("/api/profile", {
+
+            method: "PUT",
+
+            body: formData
+
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+
+            showAppPopup({ type: 'error', title: 'Error', message: result.message || 'Profile updated successfully.' });
+
+            loadProfile();
+
+        } else {
+
+            showAppPopup({ type: 'error', title: 'Error', message: result.message || 'Failed to update profile.' });
+
+        }
+
+    } catch (error) {
+
+        console.error(error);
+
+        showAppPopup({ type: 'error', title: 'Error', message: 'Server connection failed.' });
+
+    }
+
+});
+
+// Load profile when page opens
+loadProfile();
+
+</script>
+
+
+<div class="app-popup-overlay" id="appPopupOverlay">
+  <div class="app-popup success" id="appPopup">
+    <div class="brand">JAZTECH</div>
+    <div class="icon" id="appPopupIcon"><i class="fa-solid fa-check"></i></div>
+    <h3 id="appPopupTitle">Success</h3>
+    <p id="appPopupMessage">Done.</p>
+    <button type="button" class="ok-btn" id="appPopupOk">OK</button>
+  </div>
+</div>
+
+</body>
+
+</html>
