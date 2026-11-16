@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>JAZTECH · Approve Deposits</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+<style>
+:root { --bg:#0b0f19; --card:#161d2d; --gold:#f59e0b; --text:#fff; --muted:#9ca3af; --border:#1f2937; --green:#10b981; --red:#ef4444; }
+* { box-sizing:border-box; margin:0; padding:0; }
+body { font-family: system-ui, sans-serif; background:var(--bg); color:var(--text); }
+.header { background:#111827; border-bottom:1px solid var(--border); padding:16px 20px; display:flex; justify-content:space-between; align-items:center; }
+.header h1 { color:var(--gold); font-size:1.1rem; }
+.wrap { max-width:1100px; margin:0 auto; padding:20px; }
+.card { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:16px; margin-bottom:14px; }
+.row { display:grid; grid-template-columns:1.2fr 1fr 1fr 1.4fr auto; gap:12px; align-items:center; }
+@media(max-width:800px){ .row{ grid-template-columns:1fr; } }
+.muted { color:var(--muted); font-size:0.85rem; }
+.ref { color:var(--gold); font-weight:700; font-family:ui-monospace,monospace; word-break:break-all; }
+.btn { border:none; border-radius:8px; padding:10px 14px; font-weight:700; cursor:pointer; }
+.btn-ok { background:var(--green); color:#fff; }
+.btn-bad { background:var(--red); color:#fff; }
+.btn-sec { background:#1f2937; color:#fff; }
+.badge { display:inline-block; padding:3px 8px; border-radius:999px; font-size:0.75rem; background:rgba(245,158,11,.15); color:var(--gold); }
+a { color:var(--gold); text-decoration:none; }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>Approve Deposits · Transaction IDs</h1>
+  <div>
+    <a href="admin.html">← Full Admin</a>
+    &nbsp;
+    <button class="btn btn-sec" onclick="load()">Refresh</button>
+  </div>
+</div>
+<div class="wrap">
+  <p class="muted" style="margin-bottom:16px;">Review user deposit references (Tx ID) before approving.</p>
+  <div id="list"><p class="muted">Loading…</p></div>
+</div>
+<script>
+function token(){ return localStorage.getItem('token') || sessionStorage.getItem('token'); }
+async function api(url, options={}){
+  const res = await fetch(url, {
+    ...options,
+    headers: {
+      'Content-Type':'application/json',
+      ...(token()?{Authorization:'Bearer '+token()}:{}),
+      ...(options.headers||{})
+    }
+  });
+  return res;
+}
+async function load(){
+  const box = document.getElementById('list');
+  const res = await api('/api/admin/transactions');
+  if (res.status === 401) { location.href='admin.html'; return; }
+  const data = await res.json();
+  const txs = (data.transactions||[]).filter(t => t.type==='deposit' && t.status==='pending');
+  if (!txs.length) { box.innerHTML = '<div class="card muted">No pending deposits.</div>'; return; }
+  box.innerHTML = txs.map(t => {
+    const u = t.user || {};
+    const ref = t.note || '—';
+    return `<div class="card">
+      <div class="row">
+        <div><strong>${u.name||'—'}</strong><div class="muted">${u.phone||''}</div></div>
+        <div><div class="muted">Amount</div><strong>UGX ${Number(t.amount||0).toLocaleString()}</strong></div>
+        <div><div class="muted">Method</div>${t.method||'—'}</div>
+        <div><div class="muted">Transaction ID / Reference</div><div class="ref">${ref}</div></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn btn-ok" onclick="approve('${t._id}')">Approve</button>
+          <button class="btn btn-bad" onclick="reject('${t._id}')">Reject</button>
+        </div>
+      </div>
+      <div class="muted" style="margin-top:10px;">Submitted: ${t.createdAt?new Date(t.createdAt).toLocaleString():'—'} · <span class="badge">pending</span></div>
+    </div>`;
+  }).join('');
+}
+async function approve(id){
+  const res = await api('/api/admin/transaction/approve', { method:'POST', body: JSON.stringify({ id }) });
+  const d = await res.json();
+  alert(d.success ? 'Approved' : (d.message||'Failed'));
+  load();
+}
+async function reject(id){
+  const res = await api('/api/admin/transaction/reject', { method:'POST', body: JSON.stringify({ id }) });
+  const d = await res.json();
+  alert(d.success ? 'Rejected' : (d.message||'Failed'));
+  load();
+}
+if (!token()) location.href='admin.html';
+else load();
+</script>
+</body>
+</html>
